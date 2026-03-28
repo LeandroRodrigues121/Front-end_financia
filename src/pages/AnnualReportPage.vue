@@ -40,6 +40,18 @@ const renderAnnualChart = () => {
     const incomeData = rows.value.map((row) => Number(row.income_total || 0));
     const expenseData = rows.value.map((row) => Number(row.expense_total || 0));
     const accumulatedData = rows.value.map((row) => Number(row.accumulated_balance || 0));
+    const context = annualCanvas.value.getContext('2d');
+    const incomeGradient = context.createLinearGradient(0, 0, 0, 340);
+    incomeGradient.addColorStop(0, 'rgba(77, 170, 195, 0.45)');
+    incomeGradient.addColorStop(1, 'rgba(77, 170, 195, 0.05)');
+
+    const expenseGradient = context.createLinearGradient(0, 0, 0, 340);
+    expenseGradient.addColorStop(0, 'rgba(239, 114, 72, 0.42)');
+    expenseGradient.addColorStop(1, 'rgba(239, 114, 72, 0.05)');
+
+    const accumulatedGradient = context.createLinearGradient(0, 0, 0, 340);
+    accumulatedGradient.addColorStop(0, 'rgba(234, 178, 63, 0.4)');
+    accumulatedGradient.addColorStop(1, 'rgba(234, 178, 63, 0.06)');
 
     annualChart = new Chart(annualCanvas.value, {
         type: 'line',
@@ -47,31 +59,43 @@ const renderAnnualChart = () => {
             labels,
             datasets: [
                 {
-                    label: 'Receitas',
-                    data: incomeData,
-                    borderColor: '#1f7a8c',
-                    backgroundColor: 'rgba(31, 122, 140, 0.12)',
-                    fill: true,
-                    tension: 0.33,
-                    pointRadius: 3,
-                },
-                {
                     label: 'Despesas',
                     data: expenseData,
-                    borderColor: '#bf4342',
-                    backgroundColor: 'rgba(191, 67, 66, 0.11)',
+                    borderColor: '#ef7248',
+                    backgroundColor: expenseGradient,
                     fill: true,
-                    tension: 0.33,
-                    pointRadius: 3,
+                    stack: 'annual',
+                    tension: 0.4,
+                    pointRadius: 0,
+                    pointHoverRadius: 4,
+                    borderWidth: 3,
+                    cubicInterpolationMode: 'monotone',
+                },
+                {
+                    label: 'Receitas',
+                    data: incomeData,
+                    borderColor: '#4daac3',
+                    backgroundColor: incomeGradient,
+                    fill: true,
+                    stack: 'annual',
+                    tension: 0.4,
+                    pointRadius: 0,
+                    pointHoverRadius: 4,
+                    borderWidth: 3,
+                    cubicInterpolationMode: 'monotone',
                 },
                 {
                     label: 'Saldo acumulado',
                     data: accumulatedData,
-                    borderColor: '#2a9d5f',
-                    backgroundColor: 'rgba(42, 157, 95, 0.15)',
-                    fill: false,
-                    tension: 0.28,
-                    pointRadius: 4,
+                    borderColor: '#eab23f',
+                    backgroundColor: accumulatedGradient,
+                    fill: true,
+                    stack: 'annual',
+                    tension: 0.4,
+                    pointRadius: 0,
+                    pointHoverRadius: 4,
+                    borderWidth: 3,
+                    cubicInterpolationMode: 'monotone',
                 },
             ],
         },
@@ -83,7 +107,17 @@ const renderAnnualChart = () => {
                 intersect: false,
             },
             plugins: {
-                legend: { position: 'top' },
+                legend: {
+                    position: 'bottom',
+                    align: 'start',
+                    labels: {
+                        usePointStyle: true,
+                        pointStyle: 'circle',
+                        boxWidth: 10,
+                        boxHeight: 10,
+                        padding: 14,
+                    },
+                },
                 tooltip: {
                     callbacks: {
                         label(context) {
@@ -93,7 +127,19 @@ const renderAnnualChart = () => {
                 },
             },
             scales: {
+                x: {
+                    grid: {
+                        color: 'rgba(84, 104, 93, 0.16)',
+                        borderDash: [4, 4],
+                    },
+                },
                 y: {
+                    stacked: true,
+                    beginAtZero: true,
+                    grid: {
+                        color: 'rgba(84, 104, 93, 0.16)',
+                        borderDash: [4, 4],
+                    },
                     ticks: {
                         callback: (value) => formatCurrency(value),
                     },
