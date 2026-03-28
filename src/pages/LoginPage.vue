@@ -15,6 +15,7 @@ const errorMessage = ref('');
 
 const submit = async () => {
     errorMessage.value = '';
+
     try {
         await auth.login(form);
         router.push('/dashboard');
@@ -22,7 +23,7 @@ const submit = async () => {
         errorMessage.value =
             error?.response?.data?.message ||
             error?.response?.data?.errors?.login?.[0] ||
-            'Não foi possível entrar. Confira usuário e senha.';
+            'Nao foi possivel entrar. Confira usuario e senha.';
     }
 };
 </script>
@@ -32,12 +33,12 @@ const submit = async () => {
         <div class="auth-card">
             <div>
                 <h1>Finance Atlas</h1>
-                <p>Controle suas finanças de forma clara, mensal e anual.</p>
+                <p>Controle suas financas de forma clara, mensal e anual.</p>
             </div>
 
             <form class="form-grid" @submit.prevent="submit">
                 <label>
-                    Usuário
+                    Usuario
                     <input v-model="form.login" type="text" placeholder="admin" required />
                 </label>
 
@@ -51,7 +52,7 @@ const submit = async () => {
                 </button>
 
                 <p class="error-text" v-if="errorMessage">{{ errorMessage }}</p>
-                <p class="hint-text">Credenciais padrão: <strong>admin / 123456</strong></p>
+                <p class="hint-text">Credenciais padrao: <strong>admin / 123456</strong></p>
             </form>
         </div>
     </section>
