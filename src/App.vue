@@ -8,7 +8,7 @@ const route = useRoute();
 const router = useRouter();
 const auth = useAuthStore();
 
-const showShell = computed(() => auth.isAuthenticated && route.name !== 'login');
+const showShell = computed(() => auth.isAuthenticated && !['login', 'register'].includes(String(route.name)));
 const sidebarCollapsed = ref(false);
 const sidebarStorageKey = 'financeatlas:sidebar-collapsed';
 

@@ -33,6 +33,16 @@ export const useAuthStore = defineStore('auth', {
                 this.loading = false;
             }
         },
+        async register(payload) {
+            this.loading = true;
+            try {
+                const { data } = await api.post('/register', payload);
+                this.user = data.user;
+                return data;
+            } finally {
+                this.loading = false;
+            }
+        },
         async logout() {
             if (!this.user) {
                 return;
