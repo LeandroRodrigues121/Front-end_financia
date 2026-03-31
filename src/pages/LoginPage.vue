@@ -7,14 +7,15 @@ const router = useRouter();
 const auth = useAuthStore();
 
 const form = reactive({
-    login: 'admin',
-    password: '123456',
+    login: '',
+    password: '',
 });
 
 const errorMessage = ref('');
 
 const submit = async () => {
     errorMessage.value = '';
+
     try {
         await auth.login(form);
         router.push('/dashboard');
@@ -22,37 +23,71 @@ const submit = async () => {
         errorMessage.value =
             error?.response?.data?.message ||
             error?.response?.data?.errors?.login?.[0] ||
-            'Não foi possível entrar. Confira usuário e senha.';
+            'Nao foi possivel entrar. Confira usuario e senha.';
     }
 };
 </script>
 
 <template>
     <section class="auth-page">
-        <div class="auth-card">
-            <div>
-                <h1>Finance Atlas</h1>
-                <p>Controle suas finanças de forma clara, mensal e anual.</p>
-            </div>
+        <div class="auth-ambient" />
 
-            <form class="form-grid" @submit.prevent="submit">
-                <label>
-                    Usuário
-                    <input v-model="form.login" type="text" placeholder="admin" required />
-                </label>
+        <div class="auth-shell">
+            <article class="auth-brand-panel">
+                <p class="auth-eyebrow">Finance Atlas</p>
+                <h1>Seu painel financeiro com foco total em clareza.</h1>
+                <p>
+                    Controle receitas, despesas, dividas e indicadores em um unico fluxo.
+                    Entre com sua conta para continuar.
+                </p>
+                <ul class="auth-feature-list">
+                    <li>Resumo mensal e anual em tempo real</li>
+                    <li>Historico por categorias e status</li>
+                    <li>Visual responsivo para desktop e mobile</li>
+                </ul>
+            </article>
 
-                <label>
-                    Senha
-                    <input v-model="form.password" type="password" placeholder="******" required />
-                </label>
+            <article class="auth-form-panel">
+                <div class="auth-form-head">
+                    <h2>Entrar</h2>
+                    <p>Acesse seu espaco.</p>
+                </div>
 
-                <button type="submit" class="btn-primary" :disabled="auth.loading">
-                    {{ auth.loading ? 'Entrando...' : 'Entrar' }}
-                </button>
+                <form class="auth-form" @submit.prevent="submit">
+                    <label>
+                        Usuario ou email
+                        <input
+                            v-model="form.login"
+                            type="text"
+                            placeholder="admin ou email@dominio.com"
+                            required
+                            autocomplete="username"
+                        />
+                    </label>
 
-                <p class="error-text" v-if="errorMessage">{{ errorMessage }}</p>
-                <p class="hint-text">Credenciais padrão: <strong>admin / 123456</strong></p>
-            </form>
+                    <label>
+                        Senha
+                        <input
+                            v-model="form.password"
+                            type="password"
+                            placeholder="******"
+                            required
+                            autocomplete="current-password"
+                        />
+                    </label>
+
+                    <button type="submit" class="btn-primary auth-submit" :disabled="auth.loading">
+                        {{ auth.loading ? 'Entrando...' : 'Entrar na conta' }}
+                    </button>
+
+                    <p v-if="errorMessage" class="error-text">{{ errorMessage }}</p>
+                </form>
+
+                <div class="auth-footer">
+                    <p>Ainda nao tem conta?</p>
+                    <RouterLink to="/cadastro" class="auth-link">Criar conta</RouterLink>
+                </div>
+            </article>
         </div>
     </section>
 </template>

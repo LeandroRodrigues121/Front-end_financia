@@ -1,15 +1,25 @@
 <script setup>
-import { onMounted, reactive, ref } from 'vue';
+import { computed, onMounted, reactive, ref } from 'vue';
 import api from '@/services/api';
+import AppIcon from '@/components/AppIcon.vue';
 import { formatCurrency, formatDate, toDateInputValue } from '@/utils/formatters';
+import { humanizeLabel, incomeTypeLabel, monthOptions } from '@/utils/labels';
 
 const today = new Date().toISOString().slice(0, 10);
 
 const incomeTypes = [
-    { value: 'salario', label: 'Salário' },
+    { value: 'salario', label: 'Salario' },
     { value: 'renda_extra', label: 'Renda extra' },
     { value: 'rendimento_investimento', label: 'Rendimento de investimento' },
     { value: 'outros', label: 'Outros' },
+];
+
+const sortOptions = [
+    { value: 'date_desc', label: 'Data (mais recente)' },
+    { value: 'date_asc', label: 'Data (mais antiga)' },
+    { value: 'amount_desc', label: 'Valor (maior)' },
+    { value: 'amount_asc', label: 'Valor (menor)' },
+    { value: 'description_asc', label: 'Descricao (A-Z)' },
 ];
 
 const form = reactive({
@@ -31,7 +41,10 @@ const totalAmount = ref(0);
 const loading = ref(false);
 const message = ref('');
 const error = ref('');
+const formError = ref('');
 const editingId = ref(null);
+const searchQuery = ref('');
+const sortBy = ref('date_desc');
 
 const resetForm = () => {
     form.description = '';
@@ -40,7 +53,56 @@ const resetForm = () => {
     form.category = '';
     form.type = 'salario';
     form.notes = '';
+    formError.value = '';
     editingId.value = null;
+};
+
+const filteredIncomes = computed(() => {
+    let rows = [...incomes.value];
+
+    if (searchQuery.value.trim()) {
+        const query = searchQuery.value.trim().toLowerCase();
+        rows = rows.filter((income) =>
+            [income.description, income.category, income.type, income.notes]
+                .map((value) => String(value || '').toLowerCase())
+                .some((value) => value.includes(query)),
+        );
+    }
+
+    rows.sort((a, b) => {
+        if (sortBy.value === 'date_asc') return new Date(a.date) - new Date(b.date);
+        if (sortBy.value === 'amount_desc') return Number(b.amount) - Number(a.amount);
+        if (sortBy.value === 'amount_asc') return Number(a.amount) - Number(b.amount);
+        if (sortBy.value === 'description_asc') return String(a.description).localeCompare(String(b.description));
+        return new Date(b.date) - new Date(a.date);
+    });
+
+    return rows;
+});
+
+const validateForm = () => {
+    if (!String(form.description).trim()) {
+        formError.value = 'Informe a descricao da receita.';
+        return false;
+    }
+
+    if (Number(form.amount) <= 0) {
+        formError.value = 'O valor da receita deve ser maior que zero.';
+        return false;
+    }
+
+    if (!form.date) {
+        formError.value = 'Informe a data da receita.';
+        return false;
+    }
+
+    if (!String(form.category).trim()) {
+        formError.value = 'Informe uma categoria.';
+        return false;
+    }
+
+    formError.value = '';
+    return true;
 };
 
 const loadIncomes = async () => {
@@ -56,7 +118,7 @@ const loadIncomes = async () => {
         });
 
         incomes.value = data.data;
-        totalAmount.value = data.meta.total_amount;
+        totalAmount.value = Number(data.meta.total_amount || 0);
     } catch {
         error.value = 'Falha ao carregar receitas.';
     } finally {
@@ -67,6 +129,7 @@ const loadIncomes = async () => {
 const saveIncome = async () => {
     message.value = '';
     error.value = '';
+    if (!validateForm()) return;
 
     const payload = {
         ...form,
@@ -85,7 +148,7 @@ const saveIncome = async () => {
         resetForm();
         await loadIncomes();
     } catch (requestError) {
-        error.value = requestError?.response?.data?.message || 'Não foi possível salvar a receita.';
+        error.value = requestError?.response?.data?.message || 'Nao foi possivel salvar a receita.';
     }
 };
 
@@ -97,16 +160,23 @@ const editIncome = (income) => {
     form.category = income.category;
     form.type = income.type;
     form.notes = income.notes || '';
+    formError.value = '';
 };
 
 const removeIncome = async (income) => {
     const confirmed = window.confirm(`Remover a receita "${income.description}"?`);
-    if (!confirmed) {
-        return;
-    }
+    if (!confirmed) return;
 
-    await api.delete(`/incomes/${income.id}`);
-    await loadIncomes();
+    message.value = '';
+    error.value = '';
+
+    try {
+        await api.delete(`/incomes/${income.id}`);
+        message.value = 'Receita removida com sucesso.';
+        await loadIncomes();
+    } catch {
+        error.value = 'Nao foi possivel remover a receita.';
+    }
 };
 
 onMounted(loadIncomes);
@@ -117,19 +187,24 @@ onMounted(loadIncomes);
         <header class="page-header">
             <div>
                 <h2>Controle de Receitas</h2>
-                <p>Lance todas as entradas e acompanhe por período.</p>
+                <p>Lance entradas e acompanhe o resultado por periodo.</p>
             </div>
             <div class="filters">
                 <label>
-                    Mês
-                    <input v-model.number="filters.month" type="number" min="1" max="12" />
+                    Mes
+                    <select v-model.number="filters.month">
+                        <option v-for="month in monthOptions" :key="month.value" :value="month.value">
+                            {{ month.label }}
+                        </option>
+                    </select>
                 </label>
                 <label>
                     Ano
                     <input v-model.number="filters.year" type="number" min="2000" max="2100" />
                 </label>
                 <button class="btn-primary" type="button" @click="loadIncomes" :disabled="loading">
-                    Filtrar
+                    <AppIcon name="filter" :size="15" />
+                    <span>{{ loading ? 'Filtrando...' : 'Filtrar' }}</span>
                 </button>
             </div>
         </header>
@@ -139,7 +214,7 @@ onMounted(loadIncomes);
                 <h3>{{ editingId ? 'Editar Receita' : 'Nova Receita' }}</h3>
                 <form class="form-grid" @submit.prevent="saveIncome">
                     <label>
-                        Descrição
+                        Descricao
                         <input v-model="form.description" type="text" required />
                     </label>
                     <label>
@@ -163,12 +238,14 @@ onMounted(loadIncomes);
                         </select>
                     </label>
                     <label class="full">
-                        Observação
+                        Observacao
                         <textarea v-model="form.notes" rows="3" />
                     </label>
+                    <p v-if="formError" class="error-text full">{{ formError }}</p>
                     <div class="actions">
                         <button class="btn-primary" type="submit">
-                            {{ editingId ? 'Atualizar' : 'Salvar' }}
+                            <AppIcon :name="editingId ? 'edit' : 'plus'" :size="15" />
+                            <span>{{ editingId ? 'Atualizar' : 'Salvar' }}</span>
                         </button>
                         <button class="btn-ghost" type="button" @click="resetForm">Limpar</button>
                     </div>
@@ -184,32 +261,64 @@ onMounted(loadIncomes);
                 <p v-if="message" class="success-text">{{ message }}</p>
                 <p v-if="error" class="error-text">{{ error }}</p>
 
+                <div class="table-toolbar">
+                    <label class="table-search">
+                        Buscar
+                        <div class="search-field">
+                            <AppIcon name="search" :size="14" />
+                            <input v-model="searchQuery" type="text" placeholder="Descricao, categoria, tipo..." />
+                        </div>
+                    </label>
+                    <label>
+                        Ordenacao
+                        <select v-model="sortBy">
+                            <option v-for="option in sortOptions" :key="option.value" :value="option.value">
+                                {{ option.label }}
+                            </option>
+                        </select>
+                    </label>
+                </div>
+
                 <div class="table-wrap">
-                    <table>
+                    <table v-if="filteredIncomes.length">
                         <thead>
                             <tr>
-                                <th>Descrição</th>
+                                <th>Descricao</th>
                                 <th>Valor</th>
                                 <th>Data</th>
                                 <th>Categoria</th>
                                 <th>Tipo</th>
-                                <th>Ações</th>
+                                <th>Acoes</th>
                             </tr>
                         </thead>
                         <tbody>
-                            <tr v-for="income in incomes" :key="income.id">
+                            <tr v-for="income in filteredIncomes" :key="income.id">
                                 <td>{{ income.description }}</td>
                                 <td>{{ formatCurrency(income.amount) }}</td>
                                 <td>{{ formatDate(income.date) }}</td>
-                                <td>{{ income.category }}</td>
-                                <td>{{ income.type }}</td>
+                                <td>{{ humanizeLabel(income.category) }}</td>
+                                <td>
+                                    <span class="status-pill tone-neutral">{{ incomeTypeLabel(income.type) }}</span>
+                                </td>
                                 <td class="row-actions">
-                                    <button class="btn-link" @click="editIncome(income)">Editar</button>
-                                    <button class="btn-link danger" @click="removeIncome(income)">Excluir</button>
+                                    <button class="btn-link" @click="editIncome(income)">
+                                        <AppIcon name="edit" :size="14" />
+                                        <span>Editar</span>
+                                    </button>
+                                    <button class="btn-link danger" @click="removeIncome(income)">
+                                        <AppIcon name="delete" :size="14" />
+                                        <span>Excluir</span>
+                                    </button>
                                 </td>
                             </tr>
                         </tbody>
                     </table>
+
+                    <div v-else class="empty-state">
+                        <AppIcon :name="loading ? 'refresh' : 'incomes'" :size="19" />
+                        <p v-if="loading">Carregando receitas...</p>
+                        <p v-else>Nenhuma receita encontrada para os filtros atuais.</p>
+                    </div>
                 </div>
             </article>
         </div>

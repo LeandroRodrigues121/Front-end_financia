@@ -1,6 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router';
 import { useAuthStore } from '@/stores/auth';
 import LoginPage from '@/pages/LoginPage.vue';
+import RegisterPage from '@/pages/RegisterPage.vue';
 import DashboardPage from '@/pages/DashboardPage.vue';
 import IncomesPage from '@/pages/IncomesPage.vue';
 import ExpensesPage from '@/pages/ExpensesPage.vue';
@@ -14,6 +15,12 @@ const router = createRouter({
             path: '/login',
             name: 'login',
             component: LoginPage,
+            meta: { requiresAuth: false },
+        },
+        {
+            path: '/cadastro',
+            name: 'register',
+            component: RegisterPage,
             meta: { requiresAuth: false },
         },
         {
@@ -64,7 +71,7 @@ router.beforeEach(async (to) => {
         return '/login';
     }
 
-    if (to.name === 'login' && auth.isAuthenticated) {
+    if ((to.name === 'login' || to.name === 'register') && auth.isAuthenticated) {
         return '/dashboard';
     }
 
