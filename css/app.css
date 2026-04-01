@@ -1,6 +1,13 @@
 @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap');
 
 :root {
+    --color-success: #2ecc71;
+    --color-warning: #f39c12;
+    --color-danger: #e74c3c;
+    --color-info: #3498db;
+    --color-neutral: #95a5a6;
+    --color-dark: #2c3e50;
+    --color-light: #ecf0f1;
     --bg: #f3f4ef;
     --surface: #ffffff;
     --surface-soft: #f8faf8;
@@ -9,9 +16,9 @@
     --muted: #5f6e63;
     --primary: #146c7f;
     --primary-strong: #0d4754;
-    --danger: #b03a2e;
-    --warning: #b57724;
-    --positive: #227a43;
+    --danger: var(--color-danger);
+    --warning: var(--color-warning);
+    --positive: var(--color-success);
     --shadow: 0 20px 40px rgba(16, 30, 23, 0.08);
     --radius: 16px;
     --sidebar-width: 280px;
@@ -225,6 +232,13 @@ textarea {
     gap: 16px;
 }
 
+.dashboard-page {
+    --finance-income: var(--color-success);
+    --finance-expense: var(--color-danger);
+    --finance-balance: var(--color-info);
+    --finance-alert: var(--color-warning);
+}
+
 .page-header {
     display: flex;
     justify-content: space-between;
@@ -234,6 +248,12 @@ textarea {
 
 .page-header h2 {
     font-size: 1.9rem;
+}
+
+.dashboard-header-controls {
+    display: grid;
+    gap: 10px;
+    justify-items: end;
 }
 
 .filters {
@@ -276,6 +296,10 @@ textarea:focus {
 
 .dashboard-cards-grid {
     grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.dashboard-kpi-grid {
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
 }
 
 .metric-card,
@@ -326,6 +350,10 @@ textarea:focus {
     font-size: 1.1rem;
 }
 
+.metric-description {
+    font-size: 0.83rem;
+}
+
 .metric-card small {
     font-size: 0.78rem;
 }
@@ -335,6 +363,11 @@ textarea:focus {
     display: flex;
     align-items: center;
     gap: 5px;
+}
+
+.metric-progress-fill {
+    background: var(--tone-color) !important;
+    transition: width 0.22s ease;
 }
 
 .tone-positive {
@@ -412,6 +445,14 @@ textarea:focus {
     gap: 16px;
 }
 
+.chart-title-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 4px;
+}
+
 .chart-card h3 {
     margin-bottom: 4px;
 }
@@ -427,6 +468,20 @@ textarea:focus {
 
 .chart-holder-line {
     height: 340px;
+}
+
+.chart-holder-donut {
+    height: 260px;
+}
+
+.chart-holder-trend {
+    height: 300px;
+}
+
+.trend-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 16px;
 }
 
 .annual-chart-holder {
@@ -569,6 +624,11 @@ textarea:focus {
     font-size: 0.86rem;
 }
 
+.hint-finance-education {
+    margin-top: 4px;
+    max-width: 78ch;
+}
+
 .table-wrap {
     margin-top: 10px;
     overflow-x: auto;
@@ -653,6 +713,27 @@ th {
     font-size: 0.9rem;
 }
 
+.alert-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.alert-action {
+    text-decoration: none;
+    border: 1px solid rgba(17, 54, 63, 0.18);
+    background: #f7fbfa;
+    color: #0f5665;
+    border-radius: 10px;
+    padding: 6px 10px;
+    font-size: 0.8rem;
+    font-weight: 700;
+}
+
+.alert-action:hover {
+    background: #eef8f6;
+}
+
 .progress-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
@@ -701,6 +782,32 @@ th {
     height: 7px;
 }
 
+.range-switch {
+    display: inline-flex;
+    gap: 6px;
+    padding: 4px;
+    border-radius: 999px;
+    background: #edf2ef;
+    border: 1px solid #dce4dd;
+}
+
+.range-btn {
+    border: 0;
+    background: transparent;
+    color: #4d6156;
+    border-radius: 999px;
+    padding: 4px 10px;
+    font-size: 0.78rem;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.range-btn.active {
+    background: #ffffff;
+    color: #0f5665;
+    box-shadow: 0 3px 8px rgba(16, 38, 26, 0.14);
+}
+
 .quick-actions {
     display: flex;
     flex-wrap: wrap;
@@ -718,6 +825,51 @@ th {
     align-items: center;
     gap: 7px;
     font-weight: 600;
+}
+
+.quick-actions-header {
+    justify-content: flex-end;
+}
+
+.quick-action-btn-header {
+    background: linear-gradient(135deg, #ecf7ff 0%, #f4fcf8 100%);
+    color: #1d4f5a;
+    border-color: #c9dbe3;
+    box-shadow: 0 8px 18px rgba(27, 63, 72, 0.08);
+}
+
+.quick-action-btn-header:hover {
+    transform: translateY(-1px);
+}
+
+.category-breakdown {
+    margin: 0;
+    margin-top: 10px;
+    padding: 0;
+    list-style: none;
+    display: grid;
+    gap: 8px;
+}
+
+.category-breakdown li {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    align-items: center;
+    font-size: 0.82rem;
+}
+
+.category-label-wrap {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+}
+
+.category-dot {
+    width: 9px;
+    height: 9px;
+    border-radius: 999px;
+    flex-shrink: 0;
 }
 
 .debt-summary-grid {
@@ -942,10 +1094,35 @@ th {
         width: 100%;
     }
 
+    .dashboard-header-controls {
+        width: 100%;
+        justify-items: stretch;
+    }
+
     .filters > label,
     .filters > button {
         flex: 1;
         min-width: 120px;
+    }
+
+    .quick-actions-header {
+        width: 100%;
+        gap: 8px;
+    }
+
+    .quick-action-btn-header {
+        flex: 1;
+        justify-content: center;
+        min-width: 130px;
+    }
+
+    .chart-title-row {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .chart-holder-trend {
+        height: 260px;
     }
 
     .form-grid {

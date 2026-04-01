@@ -26,6 +26,12 @@ Valores padrao:
 
 O Vite usa proxy de `/api` para `VITE_BACKEND_URL` no ambiente local.
 
+### Producao (Vercel)
+
+- Defina `VITE_API_BASE_URL` com a URL completa do backend, por exemplo:
+  - `VITE_API_BASE_URL=https://seu-backend.onrender.com/api`
+- Nao use `VITE_API_BASE_URL=/api` em producao, pois isso envia requisicoes para o proprio dominio do front.
+
 ## Rodar localmente
 
 Pre-requisitos:
@@ -39,4 +45,3 @@ npm run dev
 ```
 
 Front-end em: `http://127.0.0.1:5173`
-

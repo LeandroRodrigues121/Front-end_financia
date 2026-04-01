@@ -17,7 +17,7 @@ const navItems = [
     { name: 'incomes', path: '/receitas', label: 'Receitas', icon: 'incomes' },
     { name: 'expenses', path: '/despesas', label: 'Despesas', icon: 'expenses' },
     { name: 'debts', path: '/dividas', label: 'Dividas', icon: 'debts' },
-    { name: 'annual', path: '/anual', label: 'Visao anual', icon: 'annual' },
+    { name: 'annual', path: '/anual', label: 'Relatorios', icon: 'annual' },
 ];
 
 const userInitial = computed(() => String(auth.user?.name || 'U').charAt(0).toUpperCase());
