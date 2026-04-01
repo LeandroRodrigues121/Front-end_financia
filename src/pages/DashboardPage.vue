@@ -6,7 +6,95 @@ import AppIcon from '@/components/AppIcon.vue';
 import { formatCurrency, monthName } from '@/utils/formatters';
 import { expenseCategoryLabel, monthOptions } from '@/utils/labels';
 
-Chart.register(...registerables);
+const categoryOuterLabelsPlugin = {
+    id: 'categoryOuterLabelsPlugin',
+    afterDatasetsDraw(chart, _args, pluginOptions) {
+        if (chart.config.type !== 'doughnut') return;
+        if (!pluginOptions?.enabled) return;
+
+        const dataset = chart.data?.datasets?.[0];
+        const labels = chart.data?.labels || [];
+        const meta = chart.getDatasetMeta(0);
+        if (!dataset || !meta?.data?.length) return;
+        if (chart.width < 420) return;
+
+        const values = (dataset.data || []).map((value) => Number(value || 0));
+        const total = values.reduce((sum, value) => sum + value, 0);
+        if (total <= 0) return;
+
+        const { ctx } = chart;
+        const items = meta.data
+            .map((arc, index) => {
+                const value = values[index] || 0;
+                if (value <= 0) return null;
+
+                const { x, y, startAngle, endAngle, outerRadius } = arc.getProps(
+                    ['x', 'y', 'startAngle', 'endAngle', 'outerRadius'],
+                    true,
+                );
+
+                const angle = (startAngle + endAngle) / 2;
+                const cos = Math.cos(angle);
+                const sin = Math.sin(angle);
+                const isRight = cos >= 0;
+
+                return {
+                    index,
+                    label: String(labels[index] || ''),
+                    color: Array.isArray(dataset.backgroundColor)
+                        ? dataset.backgroundColor[index]
+                        : dataset.backgroundColor || '#3498DB',
+                    startX: x + cos * (outerRadius + 3),
+                    startY: y + sin * (outerRadius + 3),
+                    elbowX: x + cos * (outerRadius + 18),
+                    elbowY: y + sin * (outerRadius + 18),
+                    isRight,
+                };
+            })
+            .filter(Boolean);
+
+        const spacing = 14;
+        const adjustSide = (sideItems) => {
+            sideItems.sort((a, b) => a.elbowY - b.elbowY);
+            for (let i = 1; i < sideItems.length; i += 1) {
+                if (sideItems[i].elbowY - sideItems[i - 1].elbowY < spacing) {
+                    sideItems[i].elbowY = sideItems[i - 1].elbowY + spacing;
+                }
+            }
+        };
+
+        const rightItems = items.filter((item) => item.isRight);
+        const leftItems = items.filter((item) => !item.isRight);
+        adjustSide(rightItems);
+        adjustSide(leftItems);
+
+        ctx.save();
+        ctx.font = '600 12px Manrope, sans-serif';
+        ctx.fillStyle = '#46584d';
+        ctx.lineWidth = 2;
+
+        items.forEach((item) => {
+            const lineEndX = item.isRight ? item.elbowX + 16 : item.elbowX - 16;
+            const textX = item.isRight ? lineEndX + 5 : lineEndX - 5;
+            const textAlign = item.isRight ? 'left' : 'right';
+
+            ctx.strokeStyle = item.color;
+            ctx.beginPath();
+            ctx.moveTo(item.startX, item.startY);
+            ctx.lineTo(item.elbowX, item.elbowY);
+            ctx.lineTo(lineEndX, item.elbowY);
+            ctx.stroke();
+
+            ctx.textAlign = textAlign;
+            ctx.textBaseline = 'middle';
+            ctx.fillText(item.label, textX, item.elbowY);
+        });
+
+        ctx.restore();
+    },
+};
+
+Chart.register(...registerables, categoryOuterLabelsPlugin);
 
 const toNumber = (value) => Number(value || 0);
 const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
@@ -14,17 +102,17 @@ const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
 const BAR_RANGE_OPTIONS = [3, 6, 12];
 
 const categoryColorMap = {
-    moradia: '#3498DB',
-    alimentacao: '#F39C12',
-    contas_fixas: '#9B59B6',
-    saude: '#2ECC71',
-    transporte: '#95A5A6',
-    lazer: '#E74C3C',
-    educacao: '#27AE60',
-    outros: '#7F8C8D',
+    moradia: '#3F9DD3',
+    alimentacao: '#39B6D7',
+    contas_fixas: '#8DCEA9',
+    saude: '#F0D35A',
+    transporte: '#F39B7A',
+    lazer: '#EB6A8C',
+    educacao: '#A7D7A8',
+    outros: '#A7B3BF',
 };
 
-const fallbackCategoryColors = ['#3498DB', '#F39C12', '#9B59B6', '#2ECC71', '#95A5A6', '#E74C3C', '#27AE60', '#7F8C8D'];
+const fallbackCategoryColors = ['#3F9DD3', '#39B6D7', '#8DCEA9', '#F0D35A', '#F39B7A', '#EB6A8C', '#A7D7A8', '#A7B3BF'];
 
 const trendDescriptor = (current, previous, { inverse = false } = {}) => {
     if (previous === null || previous === undefined) {
@@ -160,6 +248,17 @@ const categoryBreakdown = computed(() => {
 });
 
 const hasCategoryData = computed(() => categoryBreakdown.value.some((item) => item.value > 0));
+const maxCategoryValue = computed(() =>
+    categoryBreakdown.value.reduce((max, item) => (item.value > max ? item.value : max), 0),
+);
+
+const categoryBarWidth = (value) => {
+    const maxValue = maxCategoryValue.value || 1;
+    const width = (toNumber(value) / maxValue) * 100;
+    return `${Math.max(width, 8)}%`;
+};
+
+const formatPercentLabel = (percent) => `${toNumber(percent).toFixed(1).replace('.', ',')}%`;
 
 const timelineRows = computed(() => {
     const fullTimeline = dashboard.value?.monthly_balance_timeline || [];
@@ -467,7 +566,7 @@ const renderCharts = () => {
                     type: 'bar',
                     label: 'Receitas',
                     data: chartIncomes,
-                    backgroundColor: '#2ECC71',
+                    backgroundColor: '#1F7A8C',
                     borderRadius: 8,
                     order: 2,
                 },
@@ -475,7 +574,7 @@ const renderCharts = () => {
                     type: 'bar',
                     label: 'Despesas',
                     data: chartExpenses,
-                    backgroundColor: '#E74C3C',
+                    backgroundColor: '#BF4342',
                     borderRadius: 8,
                     order: 2,
                 },
@@ -563,10 +662,21 @@ const renderCharts = () => {
         options: {
             responsive: true,
             maintainAspectRatio: false,
-            cutout: '62%',
+            cutout: '56%',
+            layout: {
+                padding: {
+                    top: 24,
+                    right: 56,
+                    bottom: 24,
+                    left: 56,
+                },
+            },
             plugins: {
                 legend: {
                     display: false,
+                },
+                categoryOuterLabelsPlugin: {
+                    enabled: hasCategoryData.value,
                 },
                 tooltip: {
                     callbacks: {
@@ -574,7 +684,7 @@ const renderCharts = () => {
                             if (!hasCategoryData.value) return 'Sem valores para o periodo';
 
                             const item = categoryEntries[context.dataIndex];
-                            return `${context.label}: ${formatCurrency(context.parsed || 0)} (${item?.percent.toFixed(1).replace('.', ',')}%)`;
+                            return `${context.label}: ${formatCurrency(context.parsed || 0)} (${formatPercentLabel(item?.percent)})`;
                         },
                     },
                 },
@@ -830,18 +940,35 @@ onBeforeUnmount(() => {
                 <article class="chart-card">
                     <h3>Despesas por categoria</h3>
                     <p class="hint-text" v-if="!hasCategoryData">Nenhuma despesa por categoria neste periodo.</p>
-                    <div class="chart-holder chart-holder-donut">
-                        <canvas ref="categoryCanvas" />
-                    </div>
-                    <ul v-if="hasCategoryData" class="category-breakdown">
-                        <li v-for="item in categoryBreakdown" :key="`category-${item.key}`">
-                            <div class="category-label-wrap">
-                                <span class="category-dot" :style="{ backgroundColor: item.color }" />
-                                <span>{{ item.label }}</span>
+                    <div class="expense-categories-layout">
+                        <div class="expense-categories-chart-wrap">
+                            <div class="chart-holder chart-holder-donut">
+                                <canvas ref="categoryCanvas" />
                             </div>
-                            <strong>{{ item.percent.toFixed(1).replace('.', ',') }}% ({{ formatCurrency(item.value) }})</strong>
-                        </li>
-                    </ul>
+                        </div>
+
+                        <ul v-if="hasCategoryData" class="expense-categories-panel">
+                            <li v-for="item in categoryBreakdown" :key="`category-${item.key}`" class="expense-category-row">
+                                <div class="expense-category-head">
+                                    <div class="category-label-wrap">
+                                        <span class="category-dot" :style="{ backgroundColor: item.color }" />
+                                        <span>{{ item.label }}</span>
+                                    </div>
+                                    <strong>{{ formatPercentLabel(item.percent) }}</strong>
+                                </div>
+
+                                <div class="expense-category-foot">
+                                    <span>{{ formatCurrency(item.value) }}</span>
+                                    <div class="expense-category-bar">
+                                        <span
+                                            class="expense-category-bar-fill"
+                                            :style="{ width: categoryBarWidth(item.value), backgroundColor: item.color }"
+                                        />
+                                    </div>
+                                </div>
+                            </li>
+                        </ul>
+                    </div>
                 </article>
             </div>
 
