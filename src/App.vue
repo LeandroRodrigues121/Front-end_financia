@@ -16,8 +16,8 @@ const navItems = [
     { name: 'dashboard', path: '/dashboard', label: 'Dashboard', icon: 'dashboard' },
     { name: 'incomes', path: '/receitas', label: 'Receitas', icon: 'incomes' },
     { name: 'expenses', path: '/despesas', label: 'Despesas', icon: 'expenses' },
-    { name: 'debts', path: '/dividas', label: 'Dividas', icon: 'debts' },
-    { name: 'annual', path: '/anual', label: 'Relatorios', icon: 'annual' },
+    { name: 'debts', path: '/dividas', label: 'Dívidas', icon: 'debts' },
+    { name: 'annual', path: '/anual', label: 'Relatórios', icon: 'annual' },
 ];
 
 const userInitial = computed(() => String(auth.user?.name || 'U').charAt(0).toUpperCase());
@@ -63,7 +63,7 @@ watch(sidebarCollapsed, (value) => {
                                 <AppIcon :name="sidebarCollapsed ? 'chevronRight' : 'chevronLeft'" :size="18" />
                             </button>
                         </div>
-                        <p v-if="!sidebarCollapsed">Gestao Financeira Pessoal</p>
+                        <p v-if="!sidebarCollapsed">Gestão Financeira Pessoal</p>
                     </div>
 
                     <nav class="menu">

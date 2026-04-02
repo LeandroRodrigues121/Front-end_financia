@@ -88,7 +88,7 @@ const filteredExpenses = computed(() => {
 
 const validateForm = () => {
     if (!String(form.description).trim()) {
-        formError.value = 'Informe a descricao da despesa.';
+        formError.value = 'Informe a descrição da despesa.';
         return false;
     }
 
@@ -150,7 +150,7 @@ const saveExpense = async () => {
         resetForm();
         await loadExpenses();
     } catch (requestError) {
-        error.value = requestError?.response?.data?.message || 'Nao foi possivel salvar a despesa.';
+        error.value = requestError?.response?.data?.message || 'Não foi possível salvar a despesa.';
     }
 };
 
@@ -177,7 +177,7 @@ const removeExpense = async (expense) => {
         message.value = 'Despesa removida com sucesso.';
         await loadExpenses();
     } catch {
-        error.value = 'Nao foi possivel remover a despesa.';
+        error.value = 'Não foi possível remover a despesa.';
     }
 };
 
@@ -189,11 +189,11 @@ onMounted(loadExpenses);
         <header class="page-header">
             <div>
                 <h2>Controle de Despesas</h2>
-                <p>Gerencie saidas com categoria, status e filtros rapidos.</p>
+                <p>Gerencie saídas com categoria, status e filtros rápidos.</p>
             </div>
             <div class="filters">
                 <label>
-                    Mes
+                    Mês
                     <select v-model.number="filters.month">
                         <option v-for="month in monthOptions" :key="month.value" :value="month.value">
                             {{ month.label }}
@@ -216,7 +216,7 @@ onMounted(loadExpenses);
                 <h3>{{ editingId ? 'Editar Despesa' : 'Nova Despesa' }}</h3>
                 <form class="form-grid" @submit.prevent="saveExpense">
                     <label>
-                        Descricao
+                        Descrição
                         <input v-model="form.description" type="text" required />
                     </label>
                     <label>
@@ -244,7 +244,7 @@ onMounted(loadExpenses);
                         </select>
                     </label>
                     <label class="full">
-                        Observacao
+                        Observação
                         <textarea v-model="form.notes" rows="3" />
                     </label>
                     <p v-if="formError" class="error-text full">{{ formError }}</p>
@@ -275,12 +275,12 @@ onMounted(loadExpenses);
                             <input
                                 v-model="searchQuery"
                                 type="text"
-                                placeholder="Descricao, categoria, status..."
+                                placeholder="Descrição, categoria, status..."
                             />
                         </div>
                     </label>
                     <label>
-                        Ordenacao
+                        Ordenação
                         <select v-model="sortBy">
                             <option v-for="option in sortOptions" :key="option.value" :value="option.value">
                                 {{ option.label }}
@@ -293,12 +293,12 @@ onMounted(loadExpenses);
                     <table v-if="filteredExpenses.length">
                         <thead>
                             <tr>
-                                <th>Descricao</th>
+                                <th>Descrição</th>
                                 <th>Valor</th>
                                 <th>Data</th>
                                 <th>Categoria</th>
                                 <th>Status</th>
-                                <th>Acoes</th>
+                                <th>Ações</th>
                             </tr>
                         </thead>
                         <tbody>

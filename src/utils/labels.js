@@ -2,17 +2,17 @@ import { monthName } from '@/utils/formatters';
 
 const expenseCategoryMap = {
     moradia: 'Moradia',
-    alimentacao: 'Alimentacao',
+    alimentacao: 'Alimentação',
     transporte: 'Transporte',
     lazer: 'Lazer',
-    saude: 'Saude',
-    educacao: 'Educacao',
+    saude: 'Saúde',
+    educacao: 'Educação',
     contas_fixas: 'Contas fixas',
     outros: 'Outros',
 };
 
 const incomeTypeMap = {
-    salario: 'Salario',
+    salario: 'Salário',
     renda_extra: 'Renda extra',
     rendimento_investimento: 'Rendimento de investimento',
     outros: 'Outros',

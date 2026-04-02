@@ -40,6 +40,8 @@ const iconPaths = {
     progress: ['M4 12h16', 'M12 4v16'],
     chart: ['M4 19h16', 'M6 15l3-3 3 2 6-6'],
     plus: ['M12 5v14', 'M5 12h14'],
+    close: ['M6 6l12 12', 'M18 6 6 18'],
+    wallet: ['M3 7.5A2.5 2.5 0 0 1 5.5 5H19a2 2 0 0 1 2 2v1H5.5A2.5 2.5 0 0 0 3 10.5v0', 'M3 10.5A2.5 2.5 0 0 1 5.5 8H21v9a2 2 0 0 1-2 2H5.5A2.5 2.5 0 0 1 3 16.5v-6Z', 'M16 13h3', 'M18 13h.01'],
 };
 
 const currentPaths = computed(() => iconPaths[props.name] || iconPaths.chart);

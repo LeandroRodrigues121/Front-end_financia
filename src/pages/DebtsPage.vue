@@ -66,13 +66,13 @@ const debtProgress = (debt) => {
 
 const dueHint = (debt) => {
     if (!debt?.due_date) return 'Sem vencimento';
-    if (debt.status === 'paga') return 'Divida quitada';
+    if (debt.status === 'paga') return 'Dívida quitada';
 
     const todayMidnight = new Date(`${new Date().toISOString().slice(0, 10)}T00:00:00`);
     const due = new Date(`${String(debt.due_date).slice(0, 10)}T00:00:00`);
     const diffInDays = Math.ceil((due - todayMidnight) / (1000 * 60 * 60 * 24));
 
-    if (diffInDays < 0) return `Vencida ha ${Math.abs(diffInDays)} dia(s)`;
+    if (diffInDays < 0) return `Vencida há ${Math.abs(diffInDays)} dia(s)`;
     if (diffInDays <= 7) return `Vence em ${diffInDays} dia(s)`;
     return `Vence em ${diffInDays} dias`;
 };
@@ -101,7 +101,7 @@ const loadDebts = async () => {
         debts.value = data.data;
         totals.value = data.meta;
     } catch {
-        error.value = 'Falha ao carregar dividas.';
+        error.value = 'Falha ao carregar dívidas.';
     } finally {
         loading.value = false;
     }
@@ -112,7 +112,7 @@ const validateForm = () => {
     const paid = Number(form.paid_amount || 0);
 
     if (!String(form.description).trim()) {
-        formError.value = 'Informe a descricao da divida.';
+        formError.value = 'Informe a descrição da dívida.';
         return false;
     }
 
@@ -122,12 +122,12 @@ const validateForm = () => {
     }
 
     if (paid < 0) {
-        formError.value = 'O valor pago nao pode ser negativo.';
+        formError.value = 'O valor pago não pode ser negativo.';
         return false;
     }
 
     if (paid > total) {
-        formError.value = 'O valor pago nao pode ser maior que o valor total.';
+        formError.value = 'O valor pago não pode ser maior que o valor total.';
         return false;
     }
 
@@ -154,16 +154,16 @@ const saveDebt = async () => {
     try {
         if (editingId.value) {
             await api.put(`/debts/${editingId.value}`, payload);
-            message.value = 'Divida atualizada com sucesso.';
+            message.value = 'Dívida atualizada com sucesso.';
         } else {
             await api.post('/debts', payload);
-            message.value = 'Divida cadastrada com sucesso.';
+            message.value = 'Dívida cadastrada com sucesso.';
         }
 
         resetForm();
         await loadDebts();
     } catch (requestError) {
-        error.value = requestError?.response?.data?.message || 'Nao foi possivel salvar a divida.';
+        error.value = requestError?.response?.data?.message || 'Não foi possível salvar a dívida.';
     }
 };
 
@@ -179,7 +179,7 @@ const editDebt = (debt) => {
 };
 
 const removeDebt = async (debt) => {
-    const confirmed = window.confirm(`Remover a divida "${debt.description}"?`);
+    const confirmed = window.confirm(`Remover a dívida "${debt.description}"?`);
     if (!confirmed) return;
 
     message.value = '';
@@ -187,10 +187,10 @@ const removeDebt = async (debt) => {
 
     try {
         await api.delete(`/debts/${debt.id}`);
-        message.value = 'Divida removida com sucesso.';
+        message.value = 'Dívida removida com sucesso.';
         await loadDebts();
     } catch {
-        error.value = 'Nao foi possivel remover a divida.';
+        error.value = 'Não foi possível remover a dívida.';
     }
 };
 
@@ -201,8 +201,8 @@ onMounted(loadDebts);
     <section class="page">
         <header class="page-header">
             <div>
-                <h2>Controle de Dividas</h2>
-                <p>Monitore total, progresso de quitacao e vencimentos mais proximos.</p>
+                <h2>Controle de Dívidas</h2>
+                <p>Monitore total, progresso de quitação e vencimentos mais próximos.</p>
             </div>
             <div class="filters">
                 <label>
@@ -225,7 +225,7 @@ onMounted(loadDebts);
             <article class="metric-card">
                 <div class="metric-head">
                     <span class="metric-icon"><AppIcon name="debts" :size="15" /></span>
-                    <h3>Total de dividas</h3>
+                    <h3>Total de dívidas</h3>
                 </div>
                 <strong>{{ formatCurrency(totals.total_amount) }}</strong>
             </article>
@@ -246,22 +246,22 @@ onMounted(loadDebts);
             <article class="metric-card">
                 <div class="metric-head">
                     <span class="metric-icon"><AppIcon name="progress" :size="15" /></span>
-                    <h3>Quitacao geral</h3>
+                    <h3>Quitação geral</h3>
                 </div>
                 <strong>{{ completionPercent.toFixed(1).replace('.', ',') }}%</strong>
                 <div class="progress-track progress-track-compact">
                     <span :style="{ width: `${Math.min(completionPercent, 100)}%` }" />
                 </div>
-                <small>{{ overdueCount }} divida(s) atrasada(s)</small>
+                <small>{{ overdueCount }} dívida(s) atrasada(s)</small>
             </article>
         </div>
 
         <div class="split-grid">
             <article class="panel">
-                <h3>{{ editingId ? 'Editar Divida' : 'Nova Divida' }}</h3>
+                <h3>{{ editingId ? 'Editar Dívida' : 'Nova Dívida' }}</h3>
                 <form class="form-grid" @submit.prevent="saveDebt">
                     <label>
-                        Descricao
+                        Descrição
                         <input v-model="form.description" type="text" required />
                     </label>
                     <label>
@@ -285,7 +285,7 @@ onMounted(loadDebts);
                         </select>
                     </label>
                     <label class="full">
-                        Observacoes
+                        Observações
                         <textarea v-model="form.notes" rows="3" />
                     </label>
                     <p v-if="formError" class="error-text full">{{ formError }}</p>
@@ -301,12 +301,12 @@ onMounted(loadDebts);
 
             <article class="panel">
                 <div class="panel-title">
-                    <h3>Lista de Dividas</h3>
+                    <h3>Lista de Dívidas</h3>
                     <label class="table-search">
                         Buscar
                         <div class="search-field">
                             <AppIcon name="search" :size="14" />
-                            <input v-model="searchQuery" type="text" placeholder="Descricao, status ou vencimento..." />
+                            <input v-model="searchQuery" type="text" placeholder="Descrição, status ou vencimento..." />
                         </div>
                     </label>
                 </div>
@@ -318,14 +318,14 @@ onMounted(loadDebts);
                     <table v-if="filteredDebts.length">
                         <thead>
                             <tr>
-                                <th>Descricao</th>
+                                <th>Descrição</th>
                                 <th>Total</th>
                                 <th>Pago</th>
                                 <th>Restante</th>
                                 <th>Progresso</th>
                                 <th>Vencimento</th>
                                 <th>Status</th>
-                                <th>Acoes</th>
+                                <th>Ações</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -369,8 +369,8 @@ onMounted(loadDebts);
 
                     <div v-else class="empty-state">
                         <AppIcon :name="loading ? 'refresh' : 'debts'" :size="19" />
-                        <p v-if="loading">Carregando dividas...</p>
-                        <p v-else>Nenhuma divida encontrada para os filtros atuais.</p>
+                        <p v-if="loading">Carregando dívidas...</p>
+                        <p v-else>Nenhuma dívida encontrada para os filtros atuais.</p>
                     </div>
                 </div>
             </article>

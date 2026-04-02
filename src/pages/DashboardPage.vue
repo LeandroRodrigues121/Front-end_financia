@@ -116,16 +116,16 @@ const fallbackCategoryColors = ['#3F9DD3', '#39B6D7', '#8DCEA9', '#F0D35A', '#F3
 
 const trendDescriptor = (current, previous, { inverse = false } = {}) => {
     if (previous === null || previous === undefined) {
-        return { tone: 'neutral', label: 'Sem base de comparacao', icon: 'progress' };
+        return { tone: 'neutral', label: 'Sem base de comparação', icon: 'progress' };
     }
 
     if (previous === 0 && current === 0) {
-        return { tone: 'neutral', label: 'Sem variacao', icon: 'progress' };
+        return { tone: 'neutral', label: 'Sem variação', icon: 'progress' };
     }
 
     const change = ((current - previous) / (Math.abs(previous) || 1)) * 100;
     if (Math.abs(change) < 0.01) {
-        return { tone: 'neutral', label: 'Sem variacao', icon: 'progress' };
+        return { tone: 'neutral', label: 'Sem variação', icon: 'progress' };
     }
 
     const isBetter = inverse ? change < 0 : change > 0;
@@ -142,13 +142,13 @@ const trendDescriptor = (current, previous, { inverse = false } = {}) => {
 
 const variationLabel = (current, previous) => {
     if (previous === null || previous === undefined) return 'sem base comparativa';
-    if (previous === 0 && current === 0) return 'sem variacao';
-    if (previous === 0) return 'novo valor neste mes';
+    if (previous === 0 && current === 0) return 'sem variação';
+    if (previous === 0) return 'novo valor neste mês';
 
     const change = ((current - previous) / Math.abs(previous)) * 100;
     const signal = change > 0 ? '+' : '';
 
-    return `${signal}${change.toFixed(1).replace('.', ',')}% vs mes anterior`;
+    return `${signal}${change.toFixed(1).replace('.', ',')}% vs mês anterior`;
 };
 
 const currentDate = new Date();
@@ -177,7 +177,7 @@ const selectedPeriodMonth = computed(() => toNumber(dashboard.value?.period?.mon
 const selectedMonthIndex = computed(() => Math.max(selectedPeriodMonth.value - 1, 0));
 const previousMonthIndex = computed(() => (selectedMonthIndex.value > 0 ? selectedMonthIndex.value - 1 : null));
 const previousMonthLabel = computed(() => {
-    if (previousMonthIndex.value === null) return 'mes anterior';
+    if (previousMonthIndex.value === null) return 'mês anterior';
     return monthName(previousMonthIndex.value + 1);
 });
 
@@ -325,17 +325,17 @@ const kpiCards = computed(() => {
 
     const monthlyBalanceTrend =
         trendSummary.value?.previousBalance === null
-            ? 'Sem base de comparacao no primeiro mes carregado.'
-            : `${trendSummary.value?.balance?.label || 'Sem variacao'} vs ${previousMonthLabel.value}`;
+            ? 'Sem base de comparação no primeiro mês carregado.'
+            : `${trendSummary.value?.balance?.label || 'Sem variação'} vs ${previousMonthLabel.value}`;
 
     return [
         {
             id: 'monthly-balance',
-            title: 'Saldo atual (mes)',
+            title: 'Saldo atual (mês)',
             icon: 'dashboard',
             value: formatCurrency(monthly.balance),
             tone: toNumber(monthly.balance) >= 0 ? 'positive' : 'danger',
-            description: 'Indicador principal para decisoes imediatas.',
+            description: 'Indicador principal para decisões imediatas.',
             highlight: monthlyBalanceTrend,
             highlightIcon: trendSummary.value?.balance?.icon || 'progress',
             highlightTone: trendSummary.value?.balance?.tone || 'neutral',
@@ -346,7 +346,7 @@ const kpiCards = computed(() => {
             icon: 'alert',
             value: `${commitment.toFixed(2).replace('.', ',')}%`,
             tone: commitmentTone,
-            description: commitment > 100 ? 'Acima de 100%: custo mensal excedeu a renda.' : 'Meta recomendada: ate 70%.',
+            description: commitment > 100 ? 'Acima de 100%: custo mensal excedeu a renda.' : 'Meta recomendada: até 70%.',
             meter: clamp(commitment, 0, 100),
             overflow: commitment > 100 ? `${(commitment - 100).toFixed(1).replace('.', ',')}% acima do limite.` : '',
         },
@@ -362,16 +362,16 @@ const kpiCards = computed(() => {
                 reserveProgress > 100
                     ? `${(reserveProgress - 100).toFixed(1).replace('.', ',')}% acima da meta.`
                     : reserveProgress < 0
-                      ? 'Saldo anual negativo: reserva ainda nao iniciada.'
+                      ? 'Saldo anual negativo: reserva ainda não iniciada.'
                       : '',
         },
         {
             id: 'open-debts',
-            title: 'Dividas em aberto',
+            title: 'Dívidas em aberto',
             icon: 'debts',
             value: formatCurrency(openDebt),
             tone: openDebt > 0 ? 'warning' : 'positive',
-            description: openDebt > 0 ? 'Priorize as dividas com maior juros primeiro.' : 'Nenhuma divida pendente no momento.',
+            description: openDebt > 0 ? 'Priorize as dívidas com maior juros primeiro.' : 'Nenhuma dívida pendente no momento.',
         },
     ];
 });
@@ -392,11 +392,11 @@ const alerts = computed(() => {
             id: 'negative-balance',
             tone: 'danger',
             icon: 'alert',
-            title: 'Saldo negativo no mes',
-            description: `Seu saldo esta em ${formatCurrency(monthly.balance)}. Foque no corte de gastos variaveis agora.`,
+            title: 'Saldo negativo no mês',
+            description: `Seu saldo está em ${formatCurrency(monthly.balance)}. Foque no corte de gastos variáveis agora.`,
             actions: [
-                { id: 'negative-balance-expenses', label: 'Ver despesas variaveis', to: '/despesas' },
-                { id: 'negative-balance-income', label: 'Lancar receita extra', to: '/receitas' },
+                { id: 'negative-balance-expenses', label: 'Ver despesas variáveis', to: '/despesas' },
+                { id: 'negative-balance-income', label: 'Lançar receita extra', to: '/receitas' },
             ],
         });
     }
@@ -407,10 +407,10 @@ const alerts = computed(() => {
             tone: 'danger',
             icon: 'trendDown',
             title: 'Comprometimento acima de 100%',
-            description: `Voce consumiu ${commitment.toFixed(2).replace('.', ',')}% da renda no periodo selecionado.`,
+            description: `Você consumiu ${commitment.toFixed(2).replace('.', ',')}% da renda no período selecionado.`,
             actions: [
-                { id: 'high-commitment-budget', label: 'Ajustar orcamento', to: '/despesas' },
-                { id: 'high-commitment-categories', label: 'Ver categorias criticas', to: '/anual' },
+                { id: 'high-commitment-budget', label: 'Ajustar orçamento', to: '/despesas' },
+                { id: 'high-commitment-categories', label: 'Ver categorias críticas', to: '/anual' },
             ],
         });
     } else if (commitment > 70) {
@@ -419,10 +419,10 @@ const alerts = computed(() => {
             tone: 'warning',
             icon: 'alert',
             title: 'Comprometimento elevado',
-            description: `Voce esta em ${commitment.toFixed(2).replace('.', ',')}%. A faixa recomendada e ate 70%.`,
+            description: `Você está em ${commitment.toFixed(2).replace('.', ',')}%. A faixa recomendada é até 70%.`,
             actions: [
                 { id: 'attention-commitment-expenses', label: 'Revisar despesas fixas', to: '/despesas' },
-                { id: 'attention-commitment-report', label: 'Comparar nos relatorios', to: '/anual' },
+                { id: 'attention-commitment-report', label: 'Comparar nos relatórios', to: '/anual' },
             ],
         });
     }
@@ -432,11 +432,11 @@ const alerts = computed(() => {
             id: 'open-debt-risk',
             tone: 'warning',
             icon: 'debts',
-            title: 'Dividas em aberto elevadas',
-            description: `As dividas abertas chegaram a ${formatCurrency(openDebt)} e ja superam 2x sua renda mensal.`,
+            title: 'Dívidas em aberto elevadas',
+            description: `As dívidas abertas chegaram a ${formatCurrency(openDebt)} e já superam 2x sua renda mensal.`,
             actions: [
-                { id: 'open-debt-risk-debts', label: 'Priorizar quitacoes', to: '/dividas' },
-                { id: 'open-debt-risk-expenses', label: 'Cortar gastos nao essenciais', to: '/despesas' },
+                { id: 'open-debt-risk-debts', label: 'Priorizar quitações', to: '/dividas' },
+                { id: 'open-debt-risk-expenses', label: 'Cortar gastos não essenciais', to: '/despesas' },
             ],
         });
     }
@@ -446,11 +446,11 @@ const alerts = computed(() => {
             id: 'all-good',
             tone: 'positive',
             icon: 'check',
-            title: 'Cenario sob controle',
-            description: 'Indicadores principais estao dentro da faixa esperada neste periodo.',
+            title: 'Cenário sob controle',
+            description: 'Indicadores principais estão dentro da faixa esperada neste período.',
             actions: [
                 { id: 'all-good-income', label: 'Registrar nova receita', to: '/receitas' },
-                { id: 'all-good-report', label: 'Abrir relatorios', to: '/anual' },
+                { id: 'all-good-report', label: 'Abrir relatórios', to: '/anual' },
             ],
         });
     }
@@ -461,8 +461,8 @@ const alerts = computed(() => {
 const quickActions = [
     { id: 'qa-income', icon: 'plus', label: 'Nova receita', to: '/receitas' },
     { id: 'qa-expense', icon: 'plus', label: 'Nova despesa', to: '/despesas' },
-    { id: 'qa-debt', icon: 'plus', label: 'Nova divida', to: '/dividas' },
-    { id: 'qa-report', icon: 'annual', label: 'Relatorios', to: '/anual' },
+    { id: 'qa-debt', icon: 'plus', label: 'Nova dívida', to: '/dividas' },
+    { id: 'qa-report', icon: 'annual', label: 'Relatórios', to: '/anual' },
 ];
 
 const updatedAtLabel = computed(() => {
@@ -479,18 +479,18 @@ const updatedAtLabel = computed(() => {
 
 const barRangeLabel = computed(() => {
     const months = barPeriodRows.value.length;
-    if (!months) return 'Sem meses disponiveis para o filtro atual.';
+    if (!months) return 'Sem meses disponíveis para o filtro atual.';
 
     if (months === 1) {
-        return 'Ultimo mes disponivel no periodo selecionado.';
+        return 'Último mês disponível no período selecionado.';
     }
 
-    return `Ultimos ${months} meses ate ${monthName(selectedPeriodMonth.value)}.`;
+    return `Últimos ${months} meses até ${monthName(selectedPeriodMonth.value)}.`;
 });
 
 const recommendedLimitDescription = computed(
     () =>
-        `Limite recomendado de despesas: ${formatCurrency(recommendedExpenseLimit.value)} (70% da sua receita media dos ultimos 3 meses, para manter equilibrio financeiro). Recalculado a cada mes.`,
+        `Limite recomendado de despesas: ${formatCurrency(recommendedExpenseLimit.value)} (70% da sua receita média dos últimos 3 meses, para manter equilíbrio financeiro). Recalculado a cada mês.`,
 );
 
 const fetchDashboard = async () => {
@@ -513,7 +513,7 @@ const fetchDashboard = async () => {
         await nextTick();
         renderCharts();
     } catch {
-        error.value = 'Nao foi possivel carregar o dashboard.';
+        error.value = 'Não foi possível carregar o dashboard.';
     } finally {
         loading.value = false;
     }
@@ -616,7 +616,7 @@ const renderCharts = () => {
                             const value = toNumber(context.parsed.y);
 
                             if (datasetLabel === recommendedLimitLabel) {
-                                return `${recommendedLimitLabel} (70% da receita media dos ultimos 3 meses)`;
+                                return `${recommendedLimitLabel} (70% da receita média dos últimos 3 meses)`;
                             }
 
                             const row = chartRows[context.dataIndex];
@@ -650,7 +650,7 @@ const renderCharts = () => {
     categoryChart = new Chart(categoryCanvas.value, {
         type: 'doughnut',
         data: {
-            labels: hasCategoryData.value ? categoryEntries.map((item) => item.label) : ['Sem despesas no periodo'],
+            labels: hasCategoryData.value ? categoryEntries.map((item) => item.label) : ['Sem despesas no período'],
             datasets: [
                 {
                     data: hasCategoryData.value ? categoryEntries.map((item) => item.value) : [1],
@@ -681,7 +681,7 @@ const renderCharts = () => {
                 tooltip: {
                     callbacks: {
                         label(context) {
-                            if (!hasCategoryData.value) return 'Sem valores para o periodo';
+                            if (!hasCategoryData.value) return 'Sem valores para o período';
 
                             const item = categoryEntries[context.dataIndex];
                             return `${context.label}: ${formatCurrency(context.parsed || 0)} (${formatPercentLabel(item?.percent)})`;
@@ -831,14 +831,14 @@ onBeforeUnmount(() => {
         <header class="page-header dashboard-header">
             <div>
                 <h2>Dashboard Financeiro</h2>
-                <p>Alertas, resumo essencial do mes e analise visual para decisao rapida.</p>
+                <p>Alertas, resumo essencial do mês e análise visual para decisão rápida.</p>
                 <p v-if="updatedAtLabel" class="hint-text">Atualizado em {{ updatedAtLabel }}</p>
             </div>
 
             <div class="dashboard-header-controls">
                 <div class="filters">
                     <label>
-                        Mes
+                        Mês
                         <select v-model.number="filters.month">
                             <option v-for="month in monthOptions" :key="month.value" :value="month.value">
                                 {{ month.label }}
@@ -929,7 +929,7 @@ onBeforeUnmount(() => {
                             </button>
                         </div>
                     </div>
-                    <p class="hint-text" v-if="!hasAnyMovement">Ainda sem movimentacoes no ano selecionado.</p>
+                    <p class="hint-text" v-if="!hasAnyMovement">Ainda sem movimentações no ano selecionado.</p>
                     <p class="hint-text" v-else>{{ barRangeLabel }}</p>
                     <p class="hint-text hint-finance-education" v-if="hasAnyMovement">{{ recommendedLimitDescription }}</p>
                     <div class="chart-holder">
@@ -939,7 +939,7 @@ onBeforeUnmount(() => {
 
                 <article class="chart-card">
                     <h3>Despesas por categoria</h3>
-                    <p class="hint-text" v-if="!hasCategoryData">Nenhuma despesa por categoria neste periodo.</p>
+                    <p class="hint-text" v-if="!hasCategoryData">Nenhuma despesa por categoria neste período.</p>
                     <div class="expense-categories-layout">
                         <div class="expense-categories-chart-wrap">
                             <div class="chart-holder chart-holder-donut">
@@ -974,7 +974,7 @@ onBeforeUnmount(() => {
 
             <section class="trend-grid">
                 <article class="chart-card">
-                    <h3>Tendencia de saldo mensal</h3>
+                    <h3>Tendência de saldo mensal</h3>
                     <p class="hint-text" v-if="lowestBalancePoint">
                         Maior queda: {{ monthName(lowestBalancePoint.month) }} ({{ formatCurrency(lowestBalancePoint.balance) }}).
                     </p>
@@ -984,8 +984,8 @@ onBeforeUnmount(() => {
                 </article>
 
                 <article class="chart-card">
-                    <h3>Tendencia de saldo acumulado</h3>
-                    <p class="hint-text">Evolucao acumulada do ano selecionado.</p>
+                    <h3>Tendência de saldo acumulado</h3>
+                    <p class="hint-text">Evolução acumulada do ano selecionado.</p>
                     <div class="chart-holder chart-holder-trend">
                         <canvas ref="accumulatedTrendCanvas" />
                     </div>

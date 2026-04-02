@@ -166,7 +166,7 @@ const loadReport = async () => {
         await nextTick();
         renderAnnualChart();
     } catch {
-        error.value = 'Nao foi possivel carregar o relatorio anual.';
+        error.value = 'Não foi possível carregar o relatório anual.';
     } finally {
         loading.value = false;
     }
@@ -183,8 +183,8 @@ onBeforeUnmount(() => {
     <section class="page">
         <header class="page-header">
             <div>
-                <h2>Visao Anual</h2>
-                <p>Consolidacao completa de receitas, despesas e saldo acumulado.</p>
+                <h2>Visão Anual</h2>
+                <p>Consolidação completa de receitas, despesas e saldo acumulado.</p>
             </div>
             <div class="filters">
                 <label>
@@ -199,7 +199,7 @@ onBeforeUnmount(() => {
         </header>
 
         <p v-if="error" class="error-text">{{ error }}</p>
-        <div v-if="loading && !rows.length" class="panel panel-loading">Carregando consolidacao anual...</div>
+        <div v-if="loading && !rows.length" class="panel panel-loading">Carregando consolidação anual...</div>
 
         <div class="cards-grid annual-metrics-grid">
             <article class="metric-card">
@@ -219,19 +219,19 @@ onBeforeUnmount(() => {
                 <strong>{{ positiveMonths }}/12</strong>
             </article>
             <article class="metric-card" v-if="bestMonth">
-                <h3>Melhor mes</h3>
+                <h3>Melhor mês</h3>
                 <strong>{{ monthName(bestMonth.month) }}</strong>
                 <small>{{ formatCurrency(bestMonth.balance) }}</small>
             </article>
             <article class="metric-card" v-if="worstMonth">
-                <h3>Mes de alerta</h3>
+                <h3>Mês de alerta</h3>
                 <strong>{{ monthName(worstMonth.month) }}</strong>
                 <small>{{ formatCurrency(worstMonth.balance) }}</small>
             </article>
         </div>
 
         <article class="chart-card">
-            <h3>Tendencia Anual</h3>
+            <h3>Tendência Anual</h3>
             <p class="hint-text">Comparativo de receitas, despesas e saldo acumulado.</p>
             <div class="chart-holder annual-chart-holder">
                 <canvas ref="annualCanvas" />
@@ -239,12 +239,12 @@ onBeforeUnmount(() => {
         </article>
 
         <article class="panel">
-            <h3>Resumo mes a mes</h3>
+            <h3>Resumo mês a mês</h3>
             <div class="table-wrap">
                 <table v-if="rows.length">
                     <thead>
                         <tr>
-                            <th>Mes</th>
+                            <th>Mês</th>
                             <th>Receitas</th>
                             <th>Despesas</th>
                             <th>Saldo</th>

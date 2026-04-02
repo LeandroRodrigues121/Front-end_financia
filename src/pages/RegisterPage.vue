@@ -39,7 +39,7 @@ const submit = async () => {
         errorMessage.value =
             normalizeValidationError(error) ||
             error?.response?.data?.message ||
-            'Nao foi possivel criar sua conta agora.';
+            'Não foi possível criar sua conta agora.';
     }
 };
 </script>
@@ -51,15 +51,15 @@ const submit = async () => {
         <div class="auth-shell">
             <article class="auth-brand-panel">
                 <p class="auth-eyebrow">Novo cadastro</p>
-                <h1>Crie sua conta e acompanhe sua evolucao financeira.</h1>
+                <h1>Crie sua conta e acompanhe sua evolução financeira.</h1>
                 <p>
-                    Em poucos passos voce entra no sistema com seu proprio usuario.
-                    Depois e so registrar suas movimentacoes.
+                    Em poucos passos você entra no sistema com seu próprio usuário.
+                    Depois é só registrar suas movimentações.
                 </p>
                 <ul class="auth-feature-list">
-                    <li>Cadastro rapido e validado</li>
-                    <li>Login automatico apos criacao</li>
-                    <li>Sessao segura com autenticacao do Laravel</li>
+                    <li>Cadastro rápido e validado</li>
+                    <li>Login automático após criação</li>
+                    <li>Sessão segura com autenticação do Laravel</li>
                 </ul>
             </article>
 
@@ -82,7 +82,7 @@ const submit = async () => {
                     </label>
 
                     <label>
-                        Usuario
+                        Usuário
                         <input
                             v-model="form.username"
                             type="text"
@@ -108,7 +108,7 @@ const submit = async () => {
                         <input
                             v-model="form.password"
                             type="password"
-                            placeholder="Minimo 6 caracteres"
+                            placeholder="Mínimo 6 caracteres"
                             required
                             autocomplete="new-password"
                         />
@@ -133,7 +133,7 @@ const submit = async () => {
                 </form>
 
                 <div class="auth-footer">
-                    <p>Ja tem conta?</p>
+                    <p>Já tem conta?</p>
                     <RouterLink to="/login" class="auth-link">Entrar</RouterLink>
                 </div>
             </article>
