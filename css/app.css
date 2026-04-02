@@ -1114,22 +1114,303 @@ th {
 }
 
 .income-form-modal {
+    width: min(560px, 100%);
     display: grid;
+    gap: 24px;
+    padding: 30px 30px 26px;
+}
+
+.confirm-delete-backdrop {
+    background: rgba(13, 19, 17, 0.44);
+    backdrop-filter: blur(10px);
+}
+
+.confirm-delete-modal {
+    width: min(760px, 100%);
+    overflow: visible;
+    display: grid;
+    gap: 28px;
+    padding: 38px 44px 34px;
+    border-radius: 32px;
+    border: 1px solid rgba(224, 228, 223, 0.94);
+    background: rgba(255, 255, 255, 0.985);
+    box-shadow: 0 34px 80px rgba(13, 19, 17, 0.2);
+}
+
+.confirm-delete-header {
+    display: flex;
+    justify-content: center;
+    text-align: center;
+}
+
+.confirm-delete-header h3 {
+    font-size: clamp(2.1rem, 4.4vw, 3rem);
+    line-height: 1;
+    letter-spacing: -0.05em;
+    color: #0f1720;
+}
+
+.confirm-delete-body {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 22px;
+    align-items: center;
+}
+
+.confirm-delete-visual {
+    width: 96px;
+    height: 96px;
+    border-radius: 28px;
+    display: grid;
+    place-items: center;
+    background: radial-gradient(circle at top, rgba(255, 243, 238, 1) 0%, rgba(255, 230, 220, 0.96) 100%);
+    color: #eb5a2c;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.75);
+}
+
+.confirm-delete-message {
+    color: #2f3d36;
+    font-size: 1.15rem;
+    line-height: 1.5;
+}
+
+.confirm-delete-message strong {
+    color: #111827;
+}
+
+.confirm-delete-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 18px;
-    padding: 20px;
+}
+
+.confirm-delete-cancel,
+.confirm-delete-submit {
+    min-height: 64px;
+    border-radius: 999px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 0 24px;
+    font-size: 1rem;
+    font-weight: 700;
+    transition: transform 0.18s ease, box-shadow 0.18s ease, background-color 0.18s ease, border-color 0.18s ease;
+}
+
+.confirm-delete-cancel {
+    border: 1.5px solid #ccd4cf;
+    background: #ffffff;
+    color: #48564f;
+}
+
+.confirm-delete-cancel:hover:not(:disabled) {
+    transform: translateY(-1px);
+    background: #f8faf9;
+    border-color: #b9c4be;
+}
+
+.confirm-delete-submit {
+    border: 0;
+    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+    color: #ffffff;
+    box-shadow: 0 18px 30px rgba(220, 38, 38, 0.22);
+}
+
+.confirm-delete-submit:hover:not(:disabled) {
+    transform: translateY(-1px);
+    background: linear-gradient(135deg, #e13b3b 0%, #c91f1f 100%);
+    box-shadow: 0 22px 34px rgba(220, 38, 38, 0.26);
+}
+
+.confirm-delete-cancel:disabled,
+.confirm-delete-submit:disabled {
+    opacity: 0.62;
+    cursor: default;
+    transform: none;
+    box-shadow: none;
 }
 
 .income-form-modal-header {
     display: flex;
     align-items: flex-start;
     justify-content: space-between;
-    gap: 16px;
+    gap: 18px;
 }
 
 .income-form-modal-header h3 {
-    margin-top: 6px;
-    margin-bottom: 6px;
-    font-size: 1.5rem;
+    margin-top: 2px;
+    margin-bottom: 10px;
+    font-size: 1.75rem;
+    line-height: 1.05;
+}
+
+.income-form-modal-header p {
+    max-width: 24ch;
+    font-size: 0.98rem;
+    line-height: 1.45;
+}
+
+.income-form-modal .btn-icon-ghost {
+    width: 60px;
+    height: 60px;
+    border-radius: 18px;
+    border: 1px solid #d9e5dd;
+    background: #f8fbf9;
+    color: #54695d;
+}
+
+.income-form-modal .btn-icon-ghost:hover {
+    background: #f1f7f4;
+    border-color: #ccdad2;
+}
+
+.income-form-layout {
+    display: grid;
+    gap: 16px;
+}
+
+.income-form-row {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 16px;
+}
+
+.modal-field {
+    display: grid;
+    gap: 6px;
+}
+
+.modal-field-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    color: #415247;
+    font-size: 0.95rem;
+    font-weight: 700;
+}
+
+.required-mark {
+    color: #dc2626;
+    font-weight: 800;
+}
+
+input.modal-input-shell,
+select.modal-input-shell,
+textarea.modal-input-shell,
+.modal-input-shell {
+    width: 100%;
+    border: 1px solid #cfd9d2;
+    border-radius: 14px;
+    background: #ffffff;
+    color: #14221b;
+    transition: border-color 0.18s ease, box-shadow 0.18s ease, background-color 0.18s ease;
+}
+
+input.modal-input-shell,
+select.modal-input-shell,
+textarea.modal-input-shell {
+    padding: 12px 16px;
+}
+
+textarea.modal-input-shell {
+    min-height: 120px;
+    resize: vertical;
+}
+
+input.modal-input-shell:focus,
+select.modal-input-shell:focus,
+textarea.modal-input-shell:focus,
+.modal-input-shell:focus-within {
+    outline: none;
+    border-color: #76becc;
+    box-shadow: 0 0 0 4px rgba(118, 190, 204, 0.18);
+}
+
+.modal-input-shell.has-error {
+    border-color: #ef4444;
+    box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.1);
+}
+
+.modal-currency-field {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 16px;
+}
+
+.modal-currency-prefix {
+    color: #16867e;
+    font-weight: 800;
+}
+
+.modal-currency-field input {
+    border: 0;
+    padding: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+}
+
+.modal-currency-field input:focus {
+    outline: none;
+    border-color: transparent;
+    box-shadow: none;
+}
+
+.modal-notes-field {
+    line-height: 1.45;
+}
+
+.modal-category-hint {
+    font-size: 0.85rem;
+    color: #48594f;
+}
+
+.modal-field-error {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: #dc2626;
+    font-size: 0.8rem;
+    font-weight: 700;
+}
+
+.modal-form-error {
+    margin-top: -2px;
+    font-size: 0.88rem;
+}
+
+.income-form-actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 14px;
+    margin-top: 4px;
+}
+
+.income-submit-btn {
+    min-height: 44px;
+    padding-inline: 18px;
+}
+
+.btn-cancel-link {
+    border: 0;
+    background: transparent;
+    color: #51645a;
+    font-weight: 700;
+    cursor: pointer;
+    padding: 0;
+}
+
+.btn-cancel-link:hover {
+    color: #25352d;
+    text-decoration: underline;
+}
+
+.btn-cancel-link:disabled {
+    opacity: 0.55;
+    cursor: default;
 }
 
 .form-helper-text {
@@ -1641,7 +1922,39 @@ th {
     }
 
     .income-form-modal {
-        padding: 18px 16px;
+        padding: 22px 18px;
+    }
+
+    .confirm-delete-modal {
+        padding: 28px 22px 24px;
+        gap: 22px;
+        border-radius: 26px;
+    }
+
+    .confirm-delete-body {
+        grid-template-columns: 1fr;
+        justify-items: center;
+        text-align: center;
+    }
+
+    .confirm-delete-visual {
+        width: 84px;
+        height: 84px;
+        border-radius: 24px;
+    }
+
+    .confirm-delete-actions {
+        grid-template-columns: 1fr;
+    }
+
+    .income-form-row {
+        grid-template-columns: 1fr;
+        gap: 14px;
+    }
+
+    .income-form-actions {
+        justify-content: flex-start;
+        flex-wrap: wrap;
     }
 }
 

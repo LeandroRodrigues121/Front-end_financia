@@ -3,12 +3,61 @@ import { Chart, registerables } from 'chart.js';
 import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue';
 import api from '@/services/api';
 import AppIcon from '@/components/AppIcon.vue';
+import ConfirmDeleteModal from '@/components/ConfirmDeleteModal.vue';
 import { formatCurrency, formatDate, toDateInputValue } from '@/utils/formatters';
 import { humanizeLabel, incomeTypeLabel, monthOptions } from '@/utils/labels';
 
-Chart.register(...registerables);
-
 const ROWS_PER_PAGE = 5;
+
+const incomeShareLabelsPlugin = {
+    id: 'incomeShareLabelsPlugin',
+    afterDatasetsDraw(chart, _args, pluginOptions) {
+        if (!pluginOptions?.enabled) return;
+
+        const dataset = chart.data?.datasets?.[0];
+        const meta = chart.getDatasetMeta(0);
+        const arcs = meta?.data || [];
+        const values = (dataset?.data || []).map((value) => Number(value || 0));
+        const total = values.reduce((sum, value) => sum + value, 0);
+
+        if (!dataset || !arcs.length || total <= 0) return;
+
+        const { ctx } = chart;
+        ctx.save();
+
+        arcs.forEach((arc, index) => {
+            const value = values[index] || 0;
+            if (value <= 0) return;
+
+            const share = (value / total) * 100;
+            const { startAngle, endAngle, innerRadius, outerRadius, x: centerX, y: centerY } = arc.getProps(
+                ['startAngle', 'endAngle', 'innerRadius', 'outerRadius', 'x', 'y'],
+                true,
+            );
+            const angle = (startAngle + endAngle) / 2;
+            const radiusFactor = share < 12 ? 0.72 : 0.6;
+            const radius = innerRadius + (outerRadius - innerRadius) * radiusFactor;
+            const x = centerX + Math.cos(angle) * radius;
+            const y = centerY + Math.sin(angle) * radius;
+            const fontSize = share < 12 ? 11 : 13;
+
+            ctx.font = `700 ${fontSize}px Manrope, sans-serif`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.lineWidth = 3;
+            ctx.strokeStyle = 'rgba(19, 32, 25, 0.16)';
+            ctx.fillStyle = '#ffffff';
+
+            const label = `${share.toFixed(1).replace('.', ',')}%`;
+            ctx.strokeText(label, x, y);
+            ctx.fillText(label, x, y);
+        });
+
+        ctx.restore();
+    },
+};
+
+Chart.register(...registerables, incomeShareLabelsPlugin);
 
 const getTodayInputValue = () => {
     const now = new Date();
@@ -23,7 +72,16 @@ const incomeTypes = [
     { value: 'outros', label: 'Outros', tone: 'neutral', color: '#86938b' },
 ];
 
-const baseCategorySuggestions = ['Trabalho', 'Freelance', 'Benefícios', 'Comissões', 'Investimentos', 'Vendas', 'Outros'];
+const baseCategoryOptions = [
+    { value: 'Salário', type: 'salario' },
+    { value: 'Freelance', type: 'renda_extra' },
+    { value: 'Investimento', type: 'rendimento_investimento' },
+    { value: 'Aluguel', type: 'renda_extra' },
+    { value: 'Vendas', type: 'renda_extra' },
+    { value: 'Outros', type: 'outros' },
+];
+
+const featuredCategoryLabels = ['Salário', 'Freelance', 'Investimento', 'Outros'];
 
 const sortOptions = [
     { value: 'date_desc', label: 'Mais recentes' },
@@ -33,12 +91,127 @@ const sortOptions = [
     { value: 'description_asc', label: 'Descrição' },
 ];
 
+const normalizeText = (value) =>
+    String(value || '')
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .trim()
+        .toLowerCase();
+
+const formatCurrencyInput = (value) => {
+    const amount = parseCurrencyInput(value);
+    if (!amount) return '';
+
+    return new Intl.NumberFormat('pt-BR', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+    }).format(amount);
+};
+
+const parseCurrencyInput = (value) => {
+    if (typeof value === 'number') {
+        return Number.isFinite(value) ? value : 0;
+    }
+
+    const rawValue = String(value || '')
+        .trim()
+        .replace(/^R\$\s*/i, '')
+        .replace(/\s+/g, '');
+
+    if (!rawValue) return 0;
+
+    if (rawValue.includes(',')) {
+        const normalized = rawValue.replace(/\./g, '');
+        const [integerPart, decimalPart = ''] = normalized.split(',');
+        const safeInteger = integerPart.replace(/\D/g, '') || '0';
+        const safeDecimal = decimalPart.replace(/\D/g, '').slice(0, 2).padEnd(2, '0');
+        return Number(`${safeInteger}.${safeDecimal}`);
+    }
+
+    if (rawValue.includes('.')) {
+        const dotSections = rawValue.split('.');
+        const looksLikeThousands = dotSections.length > 2 || dotSections[dotSections.length - 1]?.length === 3;
+
+        if (looksLikeThousands) {
+            const digits = rawValue.replace(/\D/g, '');
+            return digits ? Number(digits) : 0;
+        }
+
+        const [integerPart, decimalPart = ''] = rawValue.split('.');
+        const safeInteger = integerPart.replace(/\D/g, '') || '0';
+        const safeDecimal = decimalPart.replace(/\D/g, '').slice(0, 2).padEnd(2, '0');
+        return Number(`${safeInteger}.${safeDecimal}`);
+    }
+
+    const digits = rawValue.replace(/\D/g, '').replace(/^0+(?=\d)/, '');
+    return digits ? Number(digits) : 0;
+};
+
+const sanitizeCurrencyDraft = (value) => {
+    const rawValue = String(value || '')
+        .replace(/^R\$\s*/i, '')
+        .replace(/\s+/g, '')
+        .replace(/\./g, ',')
+        .replace(/[^\d,]/g, '');
+
+    if (!rawValue) return '';
+
+    const [integerPart = '', ...decimalRest] = rawValue.split(',');
+    const safeInteger = integerPart.replace(/\D/g, '').replace(/^0+(?=\d)/, '') || '0';
+
+    if (!decimalRest.length) {
+        return safeInteger;
+    }
+
+    const safeDecimal = decimalRest.join('').replace(/\D/g, '').slice(0, 2);
+    return safeDecimal ? `${safeInteger},${safeDecimal}` : safeInteger;
+};
+
+const toCurrencyDraft = (value) => {
+    const amount = parseCurrencyInput(value);
+    if (!amount) return '';
+
+    const hasDecimals = Math.round(amount * 100) % 100 !== 0;
+    if (!hasDecimals) {
+        return String(Math.trunc(amount));
+    }
+
+    return amount.toFixed(2).replace('.', ',');
+};
+
+const inferIncomeType = (category, fallback = 'outros') => {
+    const normalized = normalizeText(category);
+    if (!normalized) return fallback;
+
+    const baseMatch = baseCategoryOptions.find((option) => normalizeText(option.value) === normalized);
+    if (baseMatch) return baseMatch.type;
+
+    const existingIncomeMatch = incomes.value.find(
+        (income) => normalizeText(income.category) === normalized && income.type,
+    );
+    if (existingIncomeMatch) return existingIncomeMatch.type;
+
+    if (normalized.includes('sal')) return 'salario';
+    if (normalized.includes('invest') || normalized.includes('rend')) return 'rendimento_investimento';
+    if (
+        normalized.includes('freela') ||
+        normalized.includes('alugu') ||
+        normalized.includes('vend') ||
+        normalized.includes('projet')
+    ) {
+        return 'renda_extra';
+    }
+    if (normalized.includes('outro')) return 'outros';
+
+    return fallback;
+};
+
 const createFormState = () => ({
     description: '',
     amount: '',
     date: getTodayInputValue(),
     category: '',
-    type: 'salario',
+    type: 'outros',
     notes: '',
 });
 
@@ -58,18 +231,28 @@ const error = ref('');
 const formError = ref('');
 const editingId = ref(null);
 const isFormOpen = ref(false);
+const deleteTarget = ref(null);
+const deleting = ref(false);
 const searchQuery = ref('');
 const sortBy = ref('date_desc');
 const currentPage = ref(1);
 const descriptionInput = ref(null);
 const typeChartCanvas = ref(null);
 const serverBreakdown = ref([]);
+const fieldErrors = reactive({
+    description: '',
+    amount: '',
+    date: '',
+    category: '',
+});
 
 let typeChart = null;
 let lastLoadRequestId = 0;
 let messageTimeoutId = null;
 
 const totalCount = computed(() => incomes.value.length);
+const isDeleteModalOpen = computed(() => Boolean(deleteTarget.value));
+const isAnyModalOpen = computed(() => isFormOpen.value || isDeleteModalOpen.value);
 
 const periodLabel = computed(() => {
     const month = monthOptions.find((item) => item.value === Number(filters.month));
@@ -108,10 +291,27 @@ const uniqueCategoriesCount = computed(
         ).size,
 );
 
-const categorySuggestions = computed(() =>
-    [...new Set([...baseCategorySuggestions, ...incomes.value.map((income) => String(income.category || '').trim()).filter(Boolean)])]
-        .sort((leftCategory, rightCategory) => leftCategory.localeCompare(rightCategory, 'pt-BR')),
-);
+const categoryOptions = computed(() => {
+    const seen = new Set();
+    const options = [];
+    const pushOption = (value) => {
+        const label = String(value || '').trim();
+        if (!label) return;
+
+        const key = normalizeText(label);
+        if (seen.has(key)) return;
+
+        seen.add(key);
+        options.push(label);
+    };
+
+    baseCategoryOptions.forEach((option) => pushOption(option.value));
+    incomes.value.forEach((income) => pushOption(income.category));
+
+    return options;
+});
+
+const featuredCategoriesText = computed(() => featuredCategoryLabels.join(', '));
 
 const filteredIncomes = computed(() => {
     let rows = [...incomes.value];
@@ -302,10 +502,30 @@ const kpiCards = computed(() => [
 
 const incomeTypeTone = (typeValue) => incomeTypes.find((type) => type.value === typeValue)?.tone || 'neutral';
 
+const clearFieldErrors = () => {
+    fieldErrors.description = '';
+    fieldErrors.amount = '';
+    fieldErrors.date = '';
+    fieldErrors.category = '';
+};
+
 const resetForm = () => {
     Object.assign(form, createFormState());
+    clearFieldErrors();
     formError.value = '';
     editingId.value = null;
+};
+
+const handleAmountInput = (event) => {
+    form.amount = sanitizeCurrencyDraft(event.target.value);
+};
+
+const handleAmountFocus = () => {
+    form.amount = toCurrencyDraft(form.amount);
+};
+
+const handleAmountBlur = () => {
+    form.amount = formatCurrencyInput(form.amount);
 };
 
 const focusDescriptionField = async () => {
@@ -322,11 +542,12 @@ const openCreateModal = () => {
 const openEditModal = (income) => {
     editingId.value = income.id;
     form.description = income.description;
-    form.amount = String(income.amount ?? '');
+    form.amount = formatCurrencyInput(income.amount);
     form.date = toDateInputValue(income.date);
     form.category = income.category;
     form.type = income.type;
     form.notes = income.notes || '';
+    clearFieldErrors();
     formError.value = '';
     isFormOpen.value = true;
     focusDescriptionField();
@@ -337,33 +558,45 @@ const closeFormModal = () => {
     resetForm();
 };
 
+const clearDeleteModal = () => {
+    deleteTarget.value = null;
+};
+
+const openDeleteModal = (income) => {
+    if (deleting.value) return;
+    deleteTarget.value = income;
+};
+
+const closeDeleteModal = () => {
+    if (deleting.value) return;
+    clearDeleteModal();
+};
+
 const clearSearch = () => {
     searchQuery.value = '';
 };
 
 const validateForm = () => {
-    if (!String(form.description).trim()) {
-        formError.value = 'Informe a descrição da receita.';
-        return false;
+    formError.value = '';
+    clearFieldErrors();
+
+    if (String(form.description).trim().length < 3) {
+        fieldErrors.description = 'Campo obrigatório (mín. 3 caracteres).';
     }
 
-    if (Number(form.amount) <= 0) {
-        formError.value = 'O valor da receita deve ser maior que zero.';
-        return false;
+    if (parseCurrencyInput(form.amount) <= 0) {
+        fieldErrors.amount = 'Valor deve ser maior que zero.';
     }
 
     if (!form.date) {
-        formError.value = 'Informe a data da receita.';
-        return false;
+        fieldErrors.date = 'Selecione uma data válida.';
     }
 
     if (!String(form.category).trim()) {
-        formError.value = 'Informe uma categoria.';
-        return false;
+        fieldErrors.category = 'Selecione uma categoria.';
     }
 
-    formError.value = '';
-    return true;
+    return !Object.values(fieldErrors).some(Boolean);
 };
 
 const destroyTypeChart = () => {
@@ -405,6 +638,9 @@ const renderTypeChart = () => {
             plugins: {
                 legend: {
                     display: false,
+                },
+                incomeShareLabelsPlugin: {
+                    enabled: hasTypeData.value,
                 },
                 tooltip: {
                     callbacks: {
@@ -471,10 +707,10 @@ const saveIncome = async () => {
     const targetId = editingId.value;
     const payload = {
         description: String(form.description).trim(),
-        amount: Number(form.amount),
+        amount: parseCurrencyInput(form.amount),
         date: form.date,
         category: String(form.category).trim(),
-        type: form.type,
+        type: inferIncomeType(form.category, form.type || 'outros'),
         notes: String(form.notes || '').trim() || null,
     };
 
@@ -497,19 +733,23 @@ const saveIncome = async () => {
     }
 };
 
-const removeIncome = async (income) => {
-    const confirmed = window.confirm(`Remover a receita "${income.description}"?`);
-    if (!confirmed) return;
+const confirmDeleteIncome = async () => {
+    const income = deleteTarget.value;
+    if (!income || deleting.value) return;
 
     message.value = '';
     error.value = '';
+    deleting.value = true;
 
     try {
         await api.delete(`/incomes/${income.id}`);
+        clearDeleteModal();
         await loadIncomes();
-        message.value = 'Receita removida com sucesso.';
+        message.value = 'Receita excluída com sucesso.';
     } catch {
-        error.value = 'Não foi possível remover a receita.';
+        error.value = 'Não foi possível excluir a receita.';
+    } finally {
+        deleting.value = false;
     }
 };
 
@@ -518,12 +758,23 @@ const goToPage = (page) => {
 };
 
 const handleWindowKeydown = (event) => {
+    if (event.key === 'Escape' && isDeleteModalOpen.value && !deleting.value) {
+        closeDeleteModal();
+        return;
+    }
+
     if (event.key === 'Escape' && isFormOpen.value && !saving.value) {
         closeFormModal();
+        return;
+    }
+
+    if ((event.key === 'Enter' || event.key === 'NumpadEnter') && event.ctrlKey && isFormOpen.value && !saving.value) {
+        event.preventDefault();
+        saveIncome();
     }
 };
 
-watch(isFormOpen, (value) => {
+watch(isAnyModalOpen, (value) => {
     document.body.style.overflow = value ? 'hidden' : '';
 });
 
@@ -537,6 +788,39 @@ watch(message, (value) => {
         messageTimeoutId = null;
     }, 4000);
 });
+
+watch(
+    () => form.description,
+    () => {
+        fieldErrors.description = '';
+        formError.value = '';
+    },
+);
+
+watch(
+    () => form.amount,
+    () => {
+        fieldErrors.amount = '';
+        formError.value = '';
+    },
+);
+
+watch(
+    () => form.date,
+    () => {
+        fieldErrors.date = '';
+        formError.value = '';
+    },
+);
+
+watch(
+    () => form.category,
+    (value) => {
+        fieldErrors.category = '';
+        formError.value = '';
+        form.type = inferIncomeType(value, form.type || 'outros');
+    },
+);
 
 watch([() => filters.month, () => filters.year], () => {
     loadIncomes({ resetPage: true });
@@ -742,7 +1026,7 @@ onBeforeUnmount(() => {
                                                     class="btn-icon btn-delete"
                                                     title="Excluir receita"
                                                     aria-label="Excluir receita"
-                                                    @click="removeIncome(income)"
+                                                    @click="openDeleteModal(income)"
                                                 >
                                                     <AppIcon name="delete" :size="15" />
                                                 </button>
@@ -856,88 +1140,126 @@ onBeforeUnmount(() => {
                             <button
                                 type="button"
                                 class="btn-icon btn-icon-ghost"
-                                aria-label="Fechar formulario"
+                                aria-label="Fechar formulário"
                                 @click="closeFormModal"
                             >
                                 <AppIcon name="close" :size="18" />
                             </button>
                         </div>
 
-                        <form class="form-grid" @submit.prevent="saveIncome">
-                            <label class="full">
-                                Descrição
+                        <form class="income-form-layout" @submit.prevent="saveIncome">
+                            <label class="modal-field">
+                                <span class="modal-field-label">
+                                    Descrição
+                                    <span class="required-mark">*</span>
+                                </span>
                                 <input
                                     ref="descriptionInput"
                                     v-model="form.description"
+                                    class="modal-input-shell"
+                                    :class="{ 'has-error': fieldErrors.description }"
                                     type="text"
                                     placeholder="Ex.: Salário principal"
+                                    autocomplete="off"
                                     required
                                 />
+                                <span v-if="fieldErrors.description" class="modal-field-error">
+                                    <AppIcon name="alert" :size="14" />
+                                    <span>{{ fieldErrors.description }}</span>
+                                </span>
                             </label>
 
-                            <label>
-                                Valor
-                                <input
-                                    v-model="form.amount"
-                                    type="number"
-                                    step="0.01"
-                                    min="0.01"
-                                    inputmode="decimal"
-                                    placeholder="0,00"
+                            <div class="income-form-row">
+                                <label class="modal-field">
+                                    <span class="modal-field-label">
+                                        Valor
+                                        <span class="required-mark">*</span>
+                                    </span>
+                                    <div class="modal-input-shell modal-currency-field" :class="{ 'has-error': fieldErrors.amount }">
+                                        <span class="modal-currency-prefix">R$</span>
+                                        <input
+                                            v-model="form.amount"
+                                            type="text"
+                                            inputmode="numeric"
+                                            placeholder="0,00"
+                                            autocomplete="off"
+                                            required
+                                            @input="handleAmountInput"
+                                            @focus="handleAmountFocus"
+                                            @blur="handleAmountBlur"
+                                        />
+                                    </div>
+                                    <span v-if="fieldErrors.amount" class="modal-field-error">
+                                        <AppIcon name="alert" :size="14" />
+                                        <span>{{ fieldErrors.amount }}</span>
+                                    </span>
+                                </label>
+
+                                <label class="modal-field">
+                                    <span class="modal-field-label">
+                                        Data
+                                        <span class="required-mark">*</span>
+                                    </span>
+                                    <input
+                                        v-model="form.date"
+                                        class="modal-input-shell"
+                                        :class="{ 'has-error': fieldErrors.date }"
+                                        type="date"
+                                        required
+                                    />
+                                    <span v-if="fieldErrors.date" class="modal-field-error">
+                                        <AppIcon name="alert" :size="14" />
+                                        <span>{{ fieldErrors.date }}</span>
+                                    </span>
+                                </label>
+                            </div>
+
+                            <label class="modal-field">
+                                <span class="modal-field-label">
+                                    Categoria
+                                    <span class="required-mark">*</span>
+                                </span>
+                                <select
+                                    v-model="form.category"
+                                    class="modal-input-shell"
+                                    :class="{ 'has-error': fieldErrors.category }"
                                     required
-                                />
-                            </label>
-
-                            <label>
-                                Data
-                                <input v-model="form.date" type="date" required />
-                            </label>
-
-                            <label>
-                                Tipo
-                                <select v-model="form.type" required>
-                                    <option v-for="type in incomeTypes" :key="type.value" :value="type.value">
-                                        {{ type.label }}
+                                >
+                                    <option value="" disabled>Selecione uma categoria</option>
+                                    <option v-for="category in categoryOptions" :key="category" :value="category">
+                                        {{ category }}
                                     </option>
                                 </select>
+                                <small class="modal-category-hint">{{ featuredCategoriesText }}</small>
+                                <span v-if="fieldErrors.category" class="modal-field-error">
+                                    <AppIcon name="alert" :size="14" />
+                                    <span>{{ fieldErrors.category }}</span>
+                                </span>
                             </label>
 
-                            <label>
-                                Categoria
-                                <input
-                                    v-model="form.category"
-                                    type="text"
-                                    list="income-category-options"
-                                    placeholder="Selecione ou digite uma categoria"
-                                    required
-                                />
-                            </label>
-
-                            <datalist id="income-category-options">
-                                <option v-for="category in categorySuggestions" :key="category" :value="category" />
-                            </datalist>
-
-                            <label class="full">
-                                Observação
+                            <label class="modal-field">
+                                <span class="modal-field-label">Observação</span>
                                 <textarea
                                     v-model="form.notes"
+                                    class="modal-input-shell modal-notes-field"
                                     rows="4"
-                                    placeholder="Adicione contexto para lembrar a origem dessa entrada."
+                                    placeholder="Adicione detalhes opcionais..."
                                 />
                             </label>
 
-                            <small class="full form-helper-text">
-                                Sugestão: use sempre o mesmo nome para categorias recorrentes.
-                            </small>
+                            <p v-if="formError" class="error-text modal-form-error">{{ formError }}</p>
 
-                            <p v-if="formError" class="error-text full">{{ formError }}</p>
-
-                            <div class="actions">
-                                <button class="btn-primary" type="submit" :disabled="saving">
+                            <div class="income-form-actions">
+                                <button class="btn-primary income-submit-btn" type="submit" :disabled="saving">
                                     <AppIcon :name="editingId ? 'edit' : 'plus'" :size="15" />
                                     <span>{{ formSubmitLabel }}</span>
                                 </button>
-                                <button class="btn-ghost" type="button" @click="closeFormModal" :disabled="saving">
+                                <button
+                                    class="btn-cancel-link"
+                                    type="button"
+                                    @click="closeFormModal"
+                                    :disabled="saving"
+                                >
                                     Cancelar
                                 </button>
                             </div>
@@ -946,5 +1268,13 @@ onBeforeUnmount(() => {
                 </div>
             </Transition>
         </Teleport>
+
+        <ConfirmDeleteModal
+            :open="isDeleteModalOpen"
+            :income-name="deleteTarget?.description || ''"
+            :loading="deleting"
+            @close="closeDeleteModal"
+            @confirm="confirmDeleteIncome"
+        />
     </section>
 </template>
