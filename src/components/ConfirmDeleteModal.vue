@@ -1,7 +1,8 @@
 <script setup>
+import { computed } from 'vue';
 import AppIcon from '@/components/AppIcon.vue';
 
-defineProps({
+const props = defineProps({
     open: {
         type: Boolean,
         default: false,
@@ -10,6 +11,22 @@ defineProps({
         type: String,
         default: '',
     },
+    itemName: {
+        type: String,
+        default: '',
+    },
+    entityLabel: {
+        type: String,
+        default: 'receita',
+    },
+    title: {
+        type: String,
+        default: '',
+    },
+    confirmLabel: {
+        type: String,
+        default: 'Excluir',
+    },
     loading: {
         type: Boolean,
         default: false,
@@ -17,6 +34,10 @@ defineProps({
 });
 
 const emit = defineEmits(['close', 'confirm']);
+
+const resolvedItemName = computed(() => props.itemName || props.incomeName);
+const resolvedTitle = computed(() => props.title || `Excluir ${props.entityLabel}`);
+const resolvedConfirmLabel = computed(() => (props.loading ? 'Excluindo...' : props.confirmLabel));
 
 const handleClose = () => {
     emit('close');
@@ -39,7 +60,7 @@ const handleConfirm = () => {
                     aria-describedby="confirm-delete-description"
                 >
                     <header class="confirm-delete-header">
-                        <h3 id="confirm-delete-title">Excluir receita</h3>
+                        <h3 id="confirm-delete-title">{{ resolvedTitle }}</h3>
                     </header>
 
                     <div class="confirm-delete-body">
@@ -49,8 +70,8 @@ const handleConfirm = () => {
 
                         <p id="confirm-delete-description" class="confirm-delete-message">
                             Tem certeza que deseja excluir
-                            <strong>"{{ incomeName }}"</strong>?
-                            Esta ação não pode ser desfeita.
+                            <strong>"{{ resolvedItemName }}"</strong>?
+                            Esta acao nao pode ser desfeita.
                         </p>
                     </div>
 
@@ -61,7 +82,7 @@ const handleConfirm = () => {
 
                         <button type="button" class="confirm-delete-submit" :disabled="loading" @click="handleConfirm">
                             <AppIcon name="delete" :size="16" />
-                            <span>{{ loading ? 'Excluindo...' : 'Excluir' }}</span>
+                            <span>{{ resolvedConfirmLabel }}</span>
                         </button>
                     </div>
                 </section>

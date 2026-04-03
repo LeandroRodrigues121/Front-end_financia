@@ -1,22 +1,26 @@
 <script setup>
 import { computed, onMounted, reactive, ref } from 'vue';
-import api from '@/services/api';
 import AppIcon from '@/components/AppIcon.vue';
+import ConfirmDeleteModal from '@/components/ConfirmDeleteModal.vue';
+import api from '@/services/api';
 import { formatCurrency, formatDate, toDateInputValue } from '@/utils/formatters';
-import { statusLabel, statusTone } from '@/utils/labels';
+import { statusLabel } from '@/utils/labels';
 
 const today = new Date().toISOString().slice(0, 10);
 const statuses = ['pendente', 'paga', 'atrasada'];
 
-const form = reactive({
+const getInitialFormState = () => ({
     description: '',
     total_amount: '',
-    paid_amount: 0,
+    paid_amount: '',
     due_date: today,
     status: 'pendente',
     notes: '',
+    installments: '',
+    notify: true,
 });
 
+const form = reactive(getInitialFormState());
 const filters = reactive({
     status: '',
 });
@@ -32,15 +36,14 @@ const error = ref('');
 const formError = ref('');
 const editingId = ref(null);
 const loading = ref(false);
+const saving = ref(false);
+const deleting = ref(false);
 const searchQuery = ref('');
+const isFormOpen = ref(false);
+const formMode = ref('create');
+const debtPendingDelete = ref(null);
 
-const completionPercent = computed(() => {
-    const total = Number(totals.value.total_amount || 0);
-    const paid = Number(totals.value.paid_amount || 0);
-    return total > 0 ? (paid / total) * 100 : 0;
-});
-
-const overdueCount = computed(() => debts.value.filter((debt) => debt.status === 'atrasada').length);
+const startOfToday = () => new Date(`${new Date().toISOString().slice(0, 10)}T00:00:00`);
 
 const filteredDebts = computed(() => {
     let rows = [...debts.value];
@@ -57,35 +60,220 @@ const filteredDebts = computed(() => {
     return rows;
 });
 
+const completionPercent = computed(() => {
+    const total = Number(totals.value.total_amount || 0);
+    const paid = Number(totals.value.paid_amount || 0);
+    return total > 0 ? (paid / total) * 100 : 0;
+});
+
+const completionDisplay = computed(() => Math.round(Math.min(completionPercent.value, 100)));
+
+const activeDebtCount = computed(() =>
+    debts.value.filter((debt) => Number(debt.remaining_amount || 0) > 0).length,
+);
+
+const overdueCount = computed(() => debts.value.filter((debt) => debt.status === 'atrasada').length);
+
+const upcomingDebt = computed(() => {
+    const openDebts = debts.value
+        .filter((debt) => debt.status !== 'paga' && debt.due_date)
+        .slice()
+        .sort((left, right) => new Date(left.due_date) - new Date(right.due_date));
+
+    return openDebts[0] || null;
+});
+
+const totalContractsLabel = computed(() => {
+    if (!activeDebtCount.value) {
+        return 'Nenhum contrato ativo';
+    }
+
+    return activeDebtCount.value === 1 ? '1 contrato ativo' : `${activeDebtCount.value} contratos ativos`;
+});
+
+const paidRatioLabel = computed(() => {
+    if (!Number(totals.value.total_amount || 0)) {
+        return 'Nenhum pagamento registado';
+    }
+
+    return `${completionDisplay.value}% do montante total`;
+});
+
+const remainingDescription = computed(() => {
+    if (!activeDebtCount.value) {
+        return 'Nenhuma parcela em aberto';
+    }
+
+    if (!upcomingDebt.value) {
+        return 'Sem vencimentos programados';
+    }
+
+    return dueHint(upcomingDebt.value);
+});
+
+const completionTagline = computed(() => {
+    if (!Number(totals.value.total_amount || 0)) {
+        return 'Rumo a sua liberdade!';
+    }
+
+    if (completionDisplay.value >= 100) {
+        return 'Liberdade conquistada!';
+    }
+
+    if (overdueCount.value > 0) {
+        return `${overdueCount.value} contrato(s) precisa(m) de atenção`;
+    }
+
+    return 'Rumo a liberdade!';
+});
+
+const modalTitle = computed(() => {
+    if (formMode.value === 'view') {
+        return 'Detalhes da Dívida';
+    }
+
+    return editingId.value ? 'Editar Dívida' : 'Registrar Dívida';
+});
+
+const modalDescription = computed(() => {
+    if (formMode.value === 'view') {
+        return 'Consulte o montante, o progresso e o próximo vencimento deste contrato.';
+    }
+
+    return editingId.value
+        ? 'Atualize os valores pagos e mantenha o seu plano de quitação em dia.'
+        : 'Planeie as suas parcelas e juros para uma quitação mais organizada.';
+});
+
+const submitLabel = computed(() => (editingId.value ? 'Atualizar Dívida' : 'Registrar Dívida'));
+const filterButtonLabel = computed(() => (loading ? 'Filtrando...' : 'Filtrar'));
+const isReadonly = computed(() => formMode.value === 'view');
+
 const debtProgress = (debt) => {
     const total = Number(debt.total_amount || 0);
     const paid = Number(debt.paid_amount || 0);
-    if (total <= 0) return 0;
-    return Math.min((paid / total) * 100, 100);
+
+    if (total <= 0) {
+        return 0;
+    }
+
+    return Math.min(Math.round((paid / total) * 100), 100);
 };
 
 const dueHint = (debt) => {
     if (!debt?.due_date) return 'Sem vencimento';
-    if (debt.status === 'paga') return 'Dívida quitada';
+    if (debt.status === 'paga') return 'Quitada';
 
-    const todayMidnight = new Date(`${new Date().toISOString().slice(0, 10)}T00:00:00`);
     const due = new Date(`${String(debt.due_date).slice(0, 10)}T00:00:00`);
-    const diffInDays = Math.ceil((due - todayMidnight) / (1000 * 60 * 60 * 24));
+    const diffInDays = Math.ceil((due - startOfToday()) / (1000 * 60 * 60 * 24));
 
-    if (diffInDays < 0) return `Vencida há ${Math.abs(diffInDays)} dia(s)`;
-    if (diffInDays <= 7) return `Vence em ${diffInDays} dia(s)`;
+    if (diffInDays < 0) {
+        const days = Math.abs(diffInDays);
+        return `Vencida ha ${days} dia${days === 1 ? '' : 's'}`;
+    }
+
+    if (diffInDays === 0) return 'Vence hoje';
+    if (diffInDays === 1) return 'Vence amanha';
+
     return `Vence em ${diffInDays} dias`;
 };
 
+const dueToneClass = (debt) => {
+    if (debt.status === 'paga') return 'is-paid';
+    if (debt.status === 'atrasada') return 'is-overdue';
+    return 'is-upcoming';
+};
+
+const debtMetaLabel = (debt) => {
+    const note = String(debt.notes || '').trim();
+
+    if (note) {
+        return note.toUpperCase();
+    }
+
+    if (debt.status === 'paga') {
+        return 'QUITADA / CONTRATO ENCERRADO';
+    }
+
+    if (debt.status === 'atrasada') {
+        return 'ATENÇÃO / PARCELA EM ATRASO';
+    }
+
+    return 'CONTRATO ATIVO / ACOMPANHAMENTO';
+};
+
+const resolveFormStatus = () => {
+    const total = Number(form.total_amount || 0);
+    const paid = Number(form.paid_amount || 0);
+
+    if (total > 0 && paid >= total) {
+        return 'paga';
+    }
+
+    if (form.due_date) {
+        const due = new Date(`${form.due_date}T00:00:00`);
+        if (due < startOfToday()) {
+            return 'atrasada';
+        }
+    }
+
+    return 'pendente';
+};
+
 const resetForm = () => {
-    form.description = '';
-    form.total_amount = '';
-    form.paid_amount = 0;
-    form.due_date = today;
-    form.status = 'pendente';
-    form.notes = '';
-    formError.value = '';
+    Object.assign(form, getInitialFormState());
     editingId.value = null;
+    formMode.value = 'create';
+    formError.value = '';
+};
+
+const closeFormModal = () => {
+    isFormOpen.value = false;
+    resetForm();
+};
+
+const populateForm = (debt) => {
+    editingId.value = debt.id;
+    form.description = debt.description || '';
+    form.total_amount = debt.total_amount ?? '';
+    form.paid_amount = debt.paid_amount ?? '';
+    form.due_date = toDateInputValue(debt.due_date) || today;
+    form.status = debt.status || 'pendente';
+    form.notes = debt.notes || '';
+    form.installments = '';
+    form.notify = true;
+    formError.value = '';
+};
+
+const openCreateModal = () => {
+    resetForm();
+    isFormOpen.value = true;
+};
+
+const openViewModal = (debt) => {
+    populateForm(debt);
+    formMode.value = 'view';
+    isFormOpen.value = true;
+};
+
+const editDebt = (debt) => {
+    populateForm(debt);
+    formMode.value = 'edit';
+    isFormOpen.value = true;
+};
+
+const promoteToEdit = () => {
+    if (!editingId.value) return;
+    formMode.value = 'edit';
+};
+
+const askDeleteDebt = (debt) => {
+    debtPendingDelete.value = debt;
+};
+
+const closeDeleteModal = () => {
+    if (deleting.value) return;
+    debtPendingDelete.value = null;
 };
 
 const loadDebts = async () => {
@@ -98,6 +286,7 @@ const loadDebts = async () => {
                 status: filters.status || undefined,
             },
         });
+
         debts.value = data.data;
         totals.value = data.meta;
     } catch {
@@ -122,12 +311,12 @@ const validateForm = () => {
     }
 
     if (paid < 0) {
-        formError.value = 'O valor pago não pode ser negativo.';
+        formError.value = 'O valor pago nao pode ser negativo.';
         return false;
     }
 
     if (paid > total) {
-        formError.value = 'O valor pago não pode ser maior que o valor total.';
+        formError.value = 'O valor pago nao pode ser maior que o valor total.';
         return false;
     }
 
@@ -141,14 +330,22 @@ const validateForm = () => {
 };
 
 const saveDebt = async () => {
+    if (isReadonly.value) return;
+
     message.value = '';
     error.value = '';
+
     if (!validateForm()) return;
 
+    saving.value = true;
+
     const payload = {
-        ...form,
+        description: String(form.description).trim(),
         total_amount: Number(form.total_amount),
         paid_amount: Number(form.paid_amount || 0),
+        due_date: form.due_date,
+        status: resolveFormStatus(),
+        notes: String(form.notes || '').trim() || null,
     };
 
     try {
@@ -160,37 +357,31 @@ const saveDebt = async () => {
             message.value = 'Dívida cadastrada com sucesso.';
         }
 
-        resetForm();
+        closeFormModal();
         await loadDebts();
     } catch (requestError) {
-        error.value = requestError?.response?.data?.message || 'Não foi possível salvar a dívida.';
+        formError.value = requestError?.response?.data?.message || 'Não foi possível salvar a dívida.';
+    } finally {
+        saving.value = false;
     }
 };
 
-const editDebt = (debt) => {
-    editingId.value = debt.id;
-    form.description = debt.description;
-    form.total_amount = debt.total_amount;
-    form.paid_amount = debt.paid_amount;
-    form.due_date = toDateInputValue(debt.due_date);
-    form.status = debt.status;
-    form.notes = debt.notes || '';
-    formError.value = '';
-};
+const confirmDeleteDebt = async () => {
+    if (!debtPendingDelete.value) return;
 
-const removeDebt = async (debt) => {
-    const confirmed = window.confirm(`Remover a dívida "${debt.description}"?`);
-    if (!confirmed) return;
-
+    deleting.value = true;
     message.value = '';
     error.value = '';
 
     try {
-        await api.delete(`/debts/${debt.id}`);
+        await api.delete(`/debts/${debtPendingDelete.value.id}`);
+        debtPendingDelete.value = null;
         message.value = 'Dívida removida com sucesso.';
         await loadDebts();
     } catch {
         error.value = 'Não foi possível remover a dívida.';
+    } finally {
+        deleting.value = false;
     }
 };
 
@@ -198,182 +389,365 @@ onMounted(loadDebts);
 </script>
 
 <template>
-    <section class="page">
-        <header class="page-header">
-            <div>
+    <section class="page debts-page">
+        <header class="debts-header">
+            <div class="debts-header-copy">
                 <h2>Controle de Dívidas</h2>
-                <p>Monitore total, progresso de quitação e vencimentos mais próximos.</p>
+                <p>Monitorize o seu progresso de quitação e planeie a sua liberdade financeira.</p>
             </div>
-            <div class="filters">
-                <label>
-                    Status
-                    <select v-model="filters.status">
-                        <option value="">Todos</option>
-                        <option v-for="status in statuses" :key="status" :value="status">
-                            {{ statusLabel(status) }}
-                        </option>
-                    </select>
-                </label>
-                <button class="btn-primary" type="button" @click="loadDebts" :disabled="loading">
-                    <AppIcon name="refresh" :size="15" />
-                    <span>{{ loading ? 'Atualizando...' : 'Atualizar' }}</span>
-                </button>
-            </div>
+
+            <button class="btn-primary debts-header-action" type="button" @click="openCreateModal">
+                <span class="debts-header-action-icon">
+                    <AppIcon name="plus" :size="18" />
+                </span>
+                <span>Nova Dívida</span>
+            </button>
         </header>
 
-        <div class="cards-grid debt-summary-grid">
-            <article class="metric-card">
-                <div class="metric-head">
-                    <span class="metric-icon"><AppIcon name="debts" :size="15" /></span>
-                    <h3>Total de dívidas</h3>
+        <section class="cards-grid debts-summary-grid">
+            <article class="metric-card debt-summary-card">
+                <div class="debt-summary-head">
+                    <span class="debt-summary-kicker">Dívida Total</span>
+                    <span class="debt-summary-icon">
+                        <AppIcon name="calculator" :size="18" />
+                    </span>
                 </div>
-                <strong>{{ formatCurrency(totals.total_amount) }}</strong>
-            </article>
-            <article class="metric-card tone-positive">
-                <div class="metric-head">
-                    <span class="metric-icon"><AppIcon name="check" :size="15" /></span>
-                    <h3>Total pago</h3>
-                </div>
-                <strong>{{ formatCurrency(totals.paid_amount) }}</strong>
-            </article>
-            <article class="metric-card tone-warning">
-                <div class="metric-head">
-                    <span class="metric-icon"><AppIcon name="alert" :size="15" /></span>
-                    <h3>Total restante</h3>
-                </div>
-                <strong>{{ formatCurrency(totals.remaining_amount) }}</strong>
-            </article>
-            <article class="metric-card">
-                <div class="metric-head">
-                    <span class="metric-icon"><AppIcon name="progress" :size="15" /></span>
-                    <h3>Quitação geral</h3>
-                </div>
-                <strong>{{ completionPercent.toFixed(1).replace('.', ',') }}%</strong>
-                <div class="progress-track progress-track-compact">
-                    <span :style="{ width: `${Math.min(completionPercent, 100)}%` }" />
-                </div>
-                <small>{{ overdueCount }} dívida(s) atrasada(s)</small>
-            </article>
-        </div>
 
-        <div class="split-grid">
-            <article class="panel">
-                <h3>{{ editingId ? 'Editar Dívida' : 'Nova Dívida' }}</h3>
-                <form class="form-grid" @submit.prevent="saveDebt">
-                    <label>
-                        Descrição
-                        <input v-model="form.description" type="text" required />
-                    </label>
-                    <label>
-                        Valor total
-                        <input v-model="form.total_amount" type="number" step="0.01" min="0.01" required />
-                    </label>
-                    <label>
-                        Valor pago
-                        <input v-model="form.paid_amount" type="number" step="0.01" min="0" required />
-                    </label>
-                    <label>
-                        Data de vencimento
-                        <input v-model="form.due_date" type="date" required />
-                    </label>
-                    <label>
-                        Status
-                        <select v-model="form.status" required>
+                <strong class="debt-summary-value">{{ formatCurrency(totals.total_amount) }}</strong>
+                <p class="metric-description">{{ totalContractsLabel }}</p>
+            </article>
+
+            <article class="metric-card debt-summary-card">
+                <div class="debt-summary-head">
+                    <span class="debt-summary-kicker">Total Pago</span>
+                    <span class="debt-summary-icon is-positive">
+                        <AppIcon name="check" :size="18" />
+                    </span>
+                </div>
+
+                <strong class="debt-summary-value is-positive">{{ formatCurrency(totals.paid_amount) }}</strong>
+                <p class="metric-description">{{ paidRatioLabel }}</p>
+            </article>
+
+            <article class="metric-card debt-summary-card">
+                <div class="debt-summary-head">
+                    <span class="debt-summary-kicker">Restante</span>
+                    <span class="debt-summary-icon is-warning">
+                        <AppIcon name="clock" :size="18" />
+                    </span>
+                </div>
+
+                <strong class="debt-summary-value is-warning">{{ formatCurrency(totals.remaining_amount) }}</strong>
+                <p class="metric-description">{{ remainingDescription }}</p>
+            </article>
+
+            <article class="metric-card debt-progress-card">
+                <div class="debt-progress-copy">
+                    <span class="debt-summary-kicker">Quitação Geral</span>
+
+                    <div class="debt-progress-value-line">
+                        <strong class="debt-summary-value">{{ completionDisplay }}%</strong>
+                        <span class="debt-progress-caption">{{ completionTagline }}</span>
+                    </div>
+                </div>
+
+                <div class="debt-progress-track">
+                    <span :style="{ width: `${completionDisplay}%` }" />
+                </div>
+
+                <span class="debt-progress-decoration" aria-hidden="true">
+                    <AppIcon name="sparkles" :size="108" />
+                </span>
+            </article>
+        </section>
+
+        <section class="panel debts-workspace">
+            <div class="debts-toolbar">
+                <div class="debts-search">
+                    <div class="debt-search-field">
+                        <AppIcon name="search" :size="18" />
+                        <input
+                            v-model="searchQuery"
+                            type="text"
+                            placeholder="Procurar dívida ou credor..."
+                            aria-label="Procurar dívida ou credor"
+                        />
+                    </div>
+                </div>
+
+                <div class="debts-toolbar-actions">
+                    <label class="debts-select-field">
+                        <select v-model="filters.status" aria-label="Filtrar por status">
+                            <option value="">Todos os Status</option>
                             <option v-for="status in statuses" :key="status" :value="status">
                                 {{ statusLabel(status) }}
                             </option>
                         </select>
+                        <AppIcon name="chevronDown" :size="16" />
                     </label>
-                    <label class="full">
-                        Observações
-                        <textarea v-model="form.notes" rows="3" />
-                    </label>
-                    <p v-if="formError" class="error-text full">{{ formError }}</p>
-                    <div class="actions">
-                        <button class="btn-primary" type="submit">
-                            <AppIcon :name="editingId ? 'edit' : 'plus'" :size="15" />
-                            <span>{{ editingId ? 'Atualizar' : 'Salvar' }}</span>
-                        </button>
-                        <button class="btn-ghost" type="button" @click="resetForm">Limpar</button>
-                    </div>
-                </form>
-            </article>
 
-            <article class="panel">
-                <div class="panel-title">
-                    <h3>Lista de Dívidas</h3>
-                    <label class="table-search">
-                        Buscar
-                        <div class="search-field">
-                            <AppIcon name="search" :size="14" />
-                            <input v-model="searchQuery" type="text" placeholder="Descrição, status ou vencimento..." />
+                    <button class="btn-ghost debts-filter-btn" type="button" @click="loadDebts" :disabled="loading">
+                        <AppIcon name="filter" :size="16" />
+                        <span>{{ filterButtonLabel }}</span>
+                    </button>
+                </div>
+            </div>
+
+            <div v-if="message || error" class="debt-feedback-stack">
+                <p v-if="message" class="debt-feedback debt-feedback-success">{{ message }}</p>
+                <p v-if="error" class="debt-feedback debt-feedback-error">{{ error }}</p>
+            </div>
+
+            <div v-if="filteredDebts.length" class="table-wrap debts-table-wrap">
+                <table class="debts-table">
+                    <thead>
+                        <tr>
+                            <th class="debt-col-description">Descrição / Credor</th>
+                            <th class="debt-col-total align-right">Total</th>
+                            <th class="debt-col-paid align-right">Pago</th>
+                            <th class="debt-col-remaining align-right">Restante</th>
+                            <th class="debt-col-progress">Progresso</th>
+                            <th class="debt-col-due">Próximo Venc.</th>
+                            <th class="debt-col-actions align-center">Ações</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        <tr v-for="debt in filteredDebts" :key="debt.id">
+                            <td class="debt-col-description">
+                                <div class="debt-description-stack">
+                                    <strong>{{ debt.description }}</strong>
+                                    <small>{{ debtMetaLabel(debt) }}</small>
+                                </div>
+                            </td>
+
+                            <td class="align-right">
+                                <span class="debt-money">{{ formatCurrency(debt.total_amount) }}</span>
+                            </td>
+
+                            <td class="align-right">
+                                <span class="debt-money is-positive">{{ formatCurrency(debt.paid_amount) }}</span>
+                            </td>
+
+                            <td class="align-right">
+                                <span class="debt-money is-remaining">{{ formatCurrency(debt.remaining_amount) }}</span>
+                            </td>
+
+                            <td class="debt-col-progress">
+                                <div class="debt-row-progress">
+                                    <div class="debt-row-progress-track">
+                                        <span :style="{ width: `${debtProgress(debt)}%` }" />
+                                    </div>
+                                    <small>{{ debtProgress(debt) }}% concluído</small>
+                                </div>
+                            </td>
+
+                            <td class="debt-col-due">
+                                <div class="debt-due-stack">
+                                    <span>{{ formatDate(debt.due_date) }}</span>
+                                    <small class="debt-due-hint" :class="dueToneClass(debt)">{{ dueHint(debt) }}</small>
+                                </div>
+                            </td>
+
+                            <td class="debt-col-actions align-center actions-cell">
+                                <div class="actions-cell-inner icon-actions debt-row-actions">
+                                    <button
+                                        class="btn-icon btn-icon-ghost debt-action-btn"
+                                        type="button"
+                                        :aria-label="`Visualizar ${debt.description}`"
+                                        @click="openViewModal(debt)"
+                                    >
+                                        <AppIcon name="eye" :size="16" />
+                                    </button>
+
+                                    <button
+                                        class="btn-icon btn-edit debt-action-btn"
+                                        type="button"
+                                        :aria-label="`Editar ${debt.description}`"
+                                        @click="editDebt(debt)"
+                                    >
+                                        <AppIcon name="edit" :size="16" />
+                                    </button>
+
+                                    <button
+                                        class="btn-icon btn-delete debt-action-btn"
+                                        type="button"
+                                        :aria-label="`Excluir ${debt.description}`"
+                                        @click="askDeleteDebt(debt)"
+                                    >
+                                        <AppIcon name="delete" :size="16" />
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div v-else class="debt-empty-state">
+                <div class="debt-empty-illustration">
+                    <AppIcon :name="loading ? 'refresh' : 'debts'" :size="24" />
+                </div>
+
+                <h3>{{ loading ? 'Carregando dívidas...' : 'Nenhuma dívida encontrada' }}</h3>
+                <p>
+                    {{
+                        loading
+                            ? 'Estamos a reunir o seu painel de quitação.'
+                            : 'Adicione uma nova dívida ou ajuste os filtros para continuar.'
+                    }}
+                </p>
+
+                <button v-if="!loading" class="btn-primary debts-empty-action" type="button" @click="openCreateModal">
+                    <AppIcon name="plus" :size="16" />
+                    <span>Nova Dívida</span>
+                </button>
+            </div>
+        </section>
+
+        <Transition name="modal-fade">
+            <div v-if="isFormOpen" class="modal-backdrop debts-modal-backdrop" @click.self="closeFormModal">
+                <section class="modal-panel debt-form-modal" role="dialog" aria-modal="true" aria-labelledby="debt-form-title">
+                    <header class="debt-form-header">
+                        <div class="debt-form-copy">
+                            <span class="debt-form-kicker">
+                                {{ isReadonly ? 'Consulta' : editingId ? 'Atualização' : 'Planeamento' }}
+                            </span>
+                            <h3 id="debt-form-title">{{ modalTitle }}</h3>
+                            <p>{{ modalDescription }}</p>
                         </div>
-                    </label>
-                </div>
 
-                <p v-if="message" class="success-text">{{ message }}</p>
-                <p v-if="error" class="error-text">{{ error }}</p>
+                        <button class="debt-form-close" type="button" @click="closeFormModal" :disabled="saving">
+                            <AppIcon name="close" :size="22" />
+                        </button>
+                    </header>
 
-                <div class="table-wrap">
-                    <table v-if="filteredDebts.length">
-                        <thead>
-                            <tr>
-                                <th>Descrição</th>
-                                <th>Total</th>
-                                <th>Pago</th>
-                                <th>Restante</th>
-                                <th>Progresso</th>
-                                <th>Vencimento</th>
-                                <th>Status</th>
-                                <th>Ações</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr v-for="debt in filteredDebts" :key="debt.id">
-                                <td>{{ debt.description }}</td>
-                                <td>{{ formatCurrency(debt.total_amount) }}</td>
-                                <td>{{ formatCurrency(debt.paid_amount) }}</td>
-                                <td>{{ formatCurrency(debt.remaining_amount) }}</td>
-                                <td>
-                                    <div class="mini-progress">
-                                        <div class="progress-track progress-track-compact">
-                                            <span :style="{ width: `${debtProgress(debt)}%` }" />
-                                        </div>
-                                        <small>{{ debtProgress(debt).toFixed(0) }}%</small>
-                                    </div>
-                                </td>
-                                <td>
-                                    <div class="debt-due-info">
-                                        <span>{{ formatDate(debt.due_date) }}</span>
-                                        <small>{{ dueHint(debt) }}</small>
-                                    </div>
-                                </td>
-                                <td>
-                                    <span class="status-pill" :class="`tone-${statusTone(debt.status)}`">
-                                        {{ statusLabel(debt.status) }}
-                                    </span>
-                                </td>
-                                <td class="row-actions">
-                                    <button class="btn-link" @click="editDebt(debt)">
-                                        <AppIcon name="edit" :size="14" />
-                                        <span>Editar</span>
-                                    </button>
-                                    <button class="btn-link danger" @click="removeDebt(debt)">
-                                        <AppIcon name="delete" :size="14" />
-                                        <span>Excluir</span>
-                                    </button>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
+                    <form class="debt-form-grid" @submit.prevent="saveDebt">
+                        <label class="debt-field debt-field-full">
+                            <span>Descrição / Credor *</span>
+                            <input
+                                v-model="form.description"
+                                type="text"
+                                :disabled="isReadonly || saving"
+                                placeholder="Ex: Empréstimo Santander, financiamento do carro"
+                                required
+                            />
+                        </label>
 
-                    <div v-else class="empty-state">
-                        <AppIcon :name="loading ? 'refresh' : 'debts'" :size="19" />
-                        <p v-if="loading">Carregando dívidas...</p>
-                        <p v-else>Nenhuma dívida encontrada para os filtros atuais.</p>
-                    </div>
-                </div>
-            </article>
-        </div>
+                        <label class="debt-field">
+                            <span>Montante Total (R$) *</span>
+                            <input
+                                v-model="form.total_amount"
+                                type="number"
+                                step="0.01"
+                                min="0.01"
+                                :disabled="isReadonly || saving"
+                                placeholder="0,00"
+                                required
+                            />
+                        </label>
+
+                        <label class="debt-field">
+                            <span>Valor Já Pago (R$)</span>
+                            <input
+                                v-model="form.paid_amount"
+                                type="number"
+                                step="0.01"
+                                min="0"
+                                :disabled="isReadonly || saving"
+                                placeholder="0,00"
+                            />
+                        </label>
+
+                        <label class="debt-field">
+                            <span>Próximo Vencimento *</span>
+                            <input v-model="form.due_date" type="date" :disabled="isReadonly || saving" required />
+                        </label>
+
+                        <label class="debt-field">
+                            <span>Nº de Parcelas</span>
+                            <div class="debt-inline-field">
+                                <input
+                                    v-model="form.installments"
+                                    type="number"
+                                    min="1"
+                                    :disabled="isReadonly || saving"
+                                    placeholder="12"
+                                />
+                                <small>Opcional para o seu planeamento.</small>
+                            </div>
+                        </label>
+
+                        <label class="debt-field debt-field-full">
+                            <span>Observações</span>
+                            <textarea
+                                v-model="form.notes"
+                                rows="3"
+                                :disabled="isReadonly || saving"
+                                placeholder="Detalhes úteis para o acompanhamento desta dívida."
+                            />
+                        </label>
+
+                        <div class="debt-toggle-card debt-field-full">
+                            <div class="debt-toggle-copy">
+                                <div class="debt-toggle-icon">
+                                    <AppIcon name="bell" :size="20" />
+                                </div>
+
+                                <div>
+                                    <strong>Lembrete de Vencimento</strong>
+                                    <p>Notificar 3 dias antes do próximo pagamento.</p>
+                                </div>
+                            </div>
+
+                            <button
+                                class="debt-toggle"
+                                :class="{ 'is-active': form.notify }"
+                                type="button"
+                                :disabled="isReadonly || saving"
+                                @click="form.notify = !form.notify"
+                            >
+                                <span />
+                            </button>
+                        </div>
+
+                        <p v-if="formError" class="error-text debt-form-error debt-field-full">{{ formError }}</p>
+
+                        <div class="debt-form-actions debt-field-full">
+                            <template v-if="isReadonly">
+                                <button class="btn-ghost debt-secondary-action" type="button" @click="closeFormModal">
+                                    Fechar
+                                </button>
+                                <button class="btn-primary debt-submit-action" type="button" @click="promoteToEdit">
+                                    <span>Editar Dívida</span>
+                                    <AppIcon name="arrowRight" :size="16" />
+                                </button>
+                            </template>
+
+                            <template v-else>
+                                <button class="btn-ghost debt-secondary-action" type="button" @click="closeFormModal">
+                                    Cancelar
+                                </button>
+
+                                <button class="btn-primary debt-submit-action" type="submit" :disabled="saving">
+                                    <span>{{ saving ? 'Salvando...' : submitLabel }}</span>
+                                    <AppIcon name="arrowRight" :size="16" />
+                                </button>
+                            </template>
+                        </div>
+                    </form>
+                </section>
+            </div>
+        </Transition>
+
+        <ConfirmDeleteModal
+            :open="Boolean(debtPendingDelete)"
+            entity-label="dívida"
+            :item-name="debtPendingDelete?.description || ''"
+            confirm-label="Excluir dívida"
+            :loading="deleting"
+            @close="closeDeleteModal"
+            @confirm="confirmDeleteDebt"
+        />
     </section>
 </template>
