@@ -18,10 +18,15 @@ const incomeTypeMap = {
     outros: 'Outros',
 };
 
-const statusMap = {
+const expenseStatusMap = {
     paga: 'Paga',
     pendente: 'Pendente',
     atrasada: 'Atrasada',
+};
+
+const incomeStatusMap = {
+    recebido: 'Recebido',
+    pendente: 'Pendente',
 };
 
 export const humanizeLabel = (value) =>
@@ -34,12 +39,20 @@ export const expenseCategoryLabel = (value) => expenseCategoryMap[value] || huma
 
 export const incomeTypeLabel = (value) => incomeTypeMap[value] || humanizeLabel(value);
 
-export const statusLabel = (value) => statusMap[value] || humanizeLabel(value);
+export const statusLabel = (value) => expenseStatusMap[value] || humanizeLabel(value);
+
+export const incomeStatusLabel = (value) => incomeStatusMap[value] || humanizeLabel(value);
 
 export const statusTone = (value) => {
     if (value === 'paga') return 'positive';
     if (value === 'atrasada') return 'danger';
     return 'warning';
+};
+
+export const incomeStatusTone = (value) => {
+    if (value === 'recebido') return 'positive';
+    if (value === 'pendente') return 'warning';
+    return 'neutral';
 };
 
 export const monthOptions = [...Array(12)].map((_, index) => ({
