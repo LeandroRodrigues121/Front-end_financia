@@ -26,6 +26,12 @@ Valores padrao:
 
 O Vite usa proxy de `/api` para `VITE_BACKEND_URL` no ambiente local.
 
+Observacao importante:
+
+- Para desenvolvimento local com `php artisan serve`, o back-end fica em `http://127.0.0.1:8000`.
+- A porta `10000` pertence ao fluxo de container/deploy do back-end e nao deve ser usada no `.env` local do front.
+- Se `VITE_BACKEND_URL` for configurada acidentalmente com `127.0.0.1:10000`, o Vite faz fallback automatico para `127.0.0.1:8000`.
+
 ### Producao (Vercel)
 
 - Defina `VITE_API_BASE_URL` com a URL completa do backend, por exemplo:
