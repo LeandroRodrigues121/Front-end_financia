@@ -1,8 +1,9 @@
 <script setup>
-import { computed, onMounted, reactive, ref } from 'vue';
+import { computed, onBeforeUnmount, onMounted, reactive, ref } from 'vue';
 import AppIcon from '@/components/AppIcon.vue';
 import ConfirmDeleteModal from '@/components/ConfirmDeleteModal.vue';
 import api from '@/services/api';
+import { buildDebtSituationReport } from '@/services/reports/buildDebtSituationReport';
 import { formatCurrency, formatDate, toDateInputValue } from '@/utils/formatters';
 import { statusLabel } from '@/utils/labels';
 
@@ -42,6 +43,10 @@ const searchQuery = ref('');
 const isFormOpen = ref(false);
 const formMode = ref('create');
 const debtPendingDelete = ref(null);
+const exportMenuRef = ref(null);
+const isExportMenuOpen = ref(false);
+const isExportingPdf = ref(false);
+const isExportingExcel = ref(false);
 
 const startOfToday = () => new Date(`${new Date().toISOString().slice(0, 10)}T00:00:00`);
 
@@ -227,6 +232,58 @@ const resetForm = () => {
     formError.value = '';
 };
 
+const closeExportMenu = () => {
+    isExportMenuOpen.value = false;
+};
+
+const toggleExportMenu = () => {
+    isExportMenuOpen.value = !isExportMenuOpen.value;
+};
+
+const buildCurrentDebtReport = () =>
+    buildDebtSituationReport({
+        debts: filteredDebts.value,
+        generatedAt: new Date(),
+    });
+
+const exportToPdf = async () => {
+    if (isExportingPdf.value) return;
+
+    message.value = '';
+    error.value = '';
+    closeExportMenu();
+    isExportingPdf.value = true;
+
+    try {
+        const { generateDebtSituationPdf } = await import('@/services/reports/generateDebtSituationPdf');
+        await generateDebtSituationPdf(buildCurrentDebtReport());
+        message.value = 'Exportação em PDF iniciada com sucesso.';
+    } catch {
+        error.value = 'Não foi possível exportar o PDF das dívidas.';
+    } finally {
+        isExportingPdf.value = false;
+    }
+};
+
+const exportToExcel = async () => {
+    if (isExportingExcel.value) return;
+
+    message.value = '';
+    error.value = '';
+    closeExportMenu();
+    isExportingExcel.value = true;
+
+    try {
+        const { generateDebtSituationExcel } = await import('@/services/reports/generateDebtSituationExcel');
+        await generateDebtSituationExcel(buildCurrentDebtReport());
+        message.value = 'Exportação em Excel iniciada com sucesso.';
+    } catch {
+        error.value = 'Não foi possível exportar o Excel das dívidas.';
+    } finally {
+        isExportingExcel.value = false;
+    }
+};
+
 const closeFormModal = () => {
     isFormOpen.value = false;
     resetForm();
@@ -246,17 +303,20 @@ const populateForm = (debt) => {
 };
 
 const openCreateModal = () => {
+    closeExportMenu();
     resetForm();
     isFormOpen.value = true;
 };
 
 const openViewModal = (debt) => {
+    closeExportMenu();
     populateForm(debt);
     formMode.value = 'view';
     isFormOpen.value = true;
 };
 
 const editDebt = (debt) => {
+    closeExportMenu();
     populateForm(debt);
     formMode.value = 'edit';
     isFormOpen.value = true;
@@ -385,7 +445,31 @@ const confirmDeleteDebt = async () => {
     }
 };
 
-onMounted(loadDebts);
+const handleDocumentClick = (event) => {
+    if (!isExportMenuOpen.value) return;
+
+    const target = event.target;
+    if (exportMenuRef.value?.contains(target)) return;
+
+    closeExportMenu();
+};
+
+const handleDocumentKeydown = (event) => {
+    if (event.key === 'Escape' && isExportMenuOpen.value) {
+        closeExportMenu();
+    }
+};
+
+onMounted(() => {
+    loadDebts();
+    document.addEventListener('click', handleDocumentClick);
+    document.addEventListener('keydown', handleDocumentKeydown);
+});
+
+onBeforeUnmount(() => {
+    document.removeEventListener('click', handleDocumentClick);
+    document.removeEventListener('keydown', handleDocumentKeydown);
+});
 </script>
 
 <template>
@@ -396,12 +480,76 @@ onMounted(loadDebts);
                 <p>Monitorize o seu progresso de quitação e planeie a sua liberdade financeira.</p>
             </div>
 
-            <button class="btn-primary debts-header-action" type="button" @click="openCreateModal">
-                <span class="debts-header-action-icon">
-                    <AppIcon name="plus" :size="18" />
-                </span>
-                <span>Nova Dívida</span>
-            </button>
+            <div class="debts-header-actions">
+                <div ref="exportMenuRef" class="export-menu">
+                    <button
+                        class="btn-ghost incomes-export-trigger debts-export-trigger"
+                        type="button"
+                        :disabled="loading || isExportingPdf || isExportingExcel"
+                        aria-haspopup="menu"
+                        :aria-expanded="isExportMenuOpen"
+                        @click.stop="toggleExportMenu"
+                    >
+                        <AppIcon name="download" :size="17" />
+                        <span>Exportar</span>
+                        <AppIcon name="chevronDown" :size="16" />
+                    </button>
+
+                    <div
+                        v-if="isExportMenuOpen"
+                        class="export-menu-panel debts-export-menu-panel"
+                        role="menu"
+                        aria-label="Opções de exportação"
+                    >
+                        <button
+                            class="export-menu-item export-menu-item-pdf"
+                            type="button"
+                            role="menuitem"
+                            :disabled="loading || isExportingPdf || isExportingExcel"
+                            @click="exportToPdf"
+                        >
+                            <AppIcon name="fileText" :size="16" />
+                            <span>
+                                <strong>{{ isExportingPdf ? 'Gerando PDF...' : 'Exportar PDF' }}</strong>
+                                <small>
+                                    {{
+                                        isExportingPdf
+                                            ? 'Montando o relatório visual da situação de débitos.'
+                                            : 'Layout pronto para impressão e compartilhamento.'
+                                    }}
+                                </small>
+                            </span>
+                        </button>
+
+                        <button
+                            class="export-menu-item export-menu-item-excel"
+                            type="button"
+                            role="menuitem"
+                            :disabled="loading || isExportingPdf || isExportingExcel"
+                            @click="exportToExcel"
+                        >
+                            <AppIcon name="fileSpreadsheet" :size="16" />
+                            <span>
+                                <strong>{{ isExportingExcel ? 'Gerando Excel...' : 'Exportar Excel' }}</strong>
+                                <small>
+                                    {{
+                                        isExportingExcel
+                                            ? 'Montando a planilha detalhada da posição das dívidas.'
+                                            : 'Planilha .xlsx com contratos, progresso e totais.'
+                                    }}
+                                </small>
+                            </span>
+                        </button>
+                    </div>
+                </div>
+
+                <button class="btn-primary debts-header-action" type="button" @click="openCreateModal">
+                    <span class="debts-header-action-icon">
+                        <AppIcon name="plus" :size="18" />
+                    </span>
+                    <span>Nova Dívida</span>
+                </button>
+            </div>
         </header>
 
         <section class="cards-grid debts-summary-grid">

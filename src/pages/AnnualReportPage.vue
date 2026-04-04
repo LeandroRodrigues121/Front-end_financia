@@ -1,8 +1,8 @@
 <script setup>
 import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue';
 import { Chart, registerables } from 'chart.js';
-import api from '@/services/api';
 import AppIcon from '@/components/AppIcon.vue';
+import { loadAnnualFinancialReport } from '@/services/reports/loadAnnualFinancialReport';
 import { formatCurrency, monthName } from '@/utils/formatters';
 import { monthShortLabel } from '@/utils/labels';
 
@@ -19,6 +19,10 @@ const totals = ref({
 const loading = ref(false);
 const toast = ref(null);
 const annualCanvas = ref(null);
+const exportMenuRef = ref(null);
+const isExportMenuOpen = ref(false);
+const isExportingExcel = ref(false);
+const isExportingPdf = ref(false);
 
 let annualChart = null;
 let toastTimeout = null;
@@ -490,25 +494,58 @@ const buildExportDocument = () => {
 </html>`;
 };
 
-const exportToPdf = () => {
+const closeExportMenu = () => {
+    isExportMenuOpen.value = false;
+};
+
+const toggleExportMenu = () => {
+    isExportMenuOpen.value = !isExportMenuOpen.value;
+};
+
+const exportToPdf = async () => {
+    if (isExportingPdf.value) return;
+
     clearToast();
+    closeExportMenu();
+    isExportingPdf.value = true;
 
-    const exportWindow = window.open('', '_blank', 'noopener,noreferrer,width=1180,height=860');
-    if (!exportWindow) {
-        showToast('error', 'Não foi possível abrir a janela de impressão. Verifique o bloqueador de pop-up.');
-        return;
+    try {
+        const { generateAnnualFinancialPdf } = await import('@/services/reports/generateAnnualFinancialPdf');
+        const report = await loadAnnualFinancialReport({
+            year: year.value,
+            generatedAt: new Date(),
+        });
+
+        await generateAnnualFinancialPdf(report);
+        showToast('success', 'PDF anual gerado com sucesso.');
+    } catch {
+        showToast('error', 'Não foi possível exportar o PDF anual.');
+    } finally {
+        isExportingPdf.value = false;
     }
+};
 
-    exportWindow.document.open();
-    exportWindow.document.write(buildExportDocument());
-    exportWindow.document.close();
-    exportWindow.focus();
+const exportToExcel = async () => {
+    if (isExportingExcel.value) return;
 
-    window.setTimeout(() => {
-        exportWindow.print();
-    }, 250);
+    clearToast();
+    closeExportMenu();
+    isExportingExcel.value = true;
 
-    showToast('success', 'Visualização para PDF aberta com sucesso.');
+    try {
+        const { generateAnnualFinancialExcel } = await import('@/services/reports/generateAnnualFinancialExcel');
+        const report = await loadAnnualFinancialReport({
+            year: year.value,
+            generatedAt: new Date(),
+        });
+
+        await generateAnnualFinancialExcel(report);
+        showToast('success', 'Excel anual gerado com sucesso.');
+    } catch {
+        showToast('error', 'Não foi possível exportar o Excel anual.');
+    } finally {
+        isExportingExcel.value = false;
+    }
 };
 
 const renderAnnualChart = () => {
@@ -666,18 +703,13 @@ const loadReport = async () => {
     const previousTotals = { ...totals.value };
 
     try {
-        const { data } = await api.get('/reports/annual', {
-            params: {
-                year: year.value,
-            },
+        const report = await loadAnnualFinancialReport({
+            year: year.value,
+            generatedAt: new Date(),
         });
 
-        rows.value = Array.isArray(data.rows) ? data.rows : [];
-        totals.value = {
-            income_total: Number(data.totals?.income_total || 0),
-            expense_total: Number(data.totals?.expense_total || 0),
-            balance: Number(data.totals?.balance || 0),
-        };
+        rows.value = report.rows;
+        totals.value = report.totals;
 
         await nextTick();
         renderAnnualChart();
@@ -694,10 +726,31 @@ const loadReport = async () => {
     }
 };
 
-onMounted(loadReport);
+const handleDocumentClick = (event) => {
+    if (!isExportMenuOpen.value) return;
+
+    const target = event.target;
+    if (exportMenuRef.value?.contains(target)) return;
+
+    closeExportMenu();
+};
+
+const handleWindowKeydown = (event) => {
+    if (event.key === 'Escape' && isExportMenuOpen.value) {
+        closeExportMenu();
+    }
+};
+
+onMounted(() => {
+    loadReport();
+    document.addEventListener('click', handleDocumentClick);
+    window.addEventListener('keydown', handleWindowKeydown);
+});
 
 onBeforeUnmount(() => {
     clearToast();
+    document.removeEventListener('click', handleDocumentClick);
+    window.removeEventListener('keydown', handleWindowKeydown);
 
     if (annualChart) {
         annualChart.destroy();
@@ -724,15 +777,62 @@ onBeforeUnmount(() => {
                     </select>
                 </label>
 
-                <button
-                    class="annual-action annual-action--ghost"
-                    type="button"
-                    :disabled="!hasRows"
-                    @click="exportToPdf"
-                >
-                    <AppIcon name="download" :size="16" />
-                    <span>Exportar PDF</span>
-                </button>
+                <div ref="exportMenuRef" class="export-menu">
+                    <button
+                        class="btn-ghost incomes-export-trigger"
+                        type="button"
+                        :disabled="loading || isExportingPdf || isExportingExcel || !hasRows"
+                        aria-haspopup="menu"
+                        :aria-expanded="isExportMenuOpen"
+                        @click.stop="toggleExportMenu"
+                    >
+                        <AppIcon name="download" :size="17" />
+                        <span>Exportar</span>
+                        <AppIcon name="chevronDown" :size="16" />
+                    </button>
+
+                    <div v-if="isExportMenuOpen" class="export-menu-panel" role="menu" aria-label="Opções de exportação">
+                        <button
+                            class="export-menu-item export-menu-item-pdf"
+                            type="button"
+                            role="menuitem"
+                            :disabled="loading || isExportingPdf || isExportingExcel"
+                            @click="exportToPdf"
+                        >
+                            <AppIcon name="fileText" :size="16" />
+                            <span>
+                                <strong>{{ isExportingPdf ? 'Gerando PDF...' : 'Exportar PDF' }}</strong>
+                                <small>
+                                    {{
+                                        isExportingPdf
+                                            ? 'Montando o relatório anual com o layout executivo.'
+                                            : 'Relatório anual em PDF no modelo aprovado pelo protótipo.'
+                                    }}
+                                </small>
+                            </span>
+                        </button>
+
+                        <button
+                            class="export-menu-item export-menu-item-excel"
+                            type="button"
+                            role="menuitem"
+                            :disabled="loading || isExportingPdf || isExportingExcel"
+                            @click="exportToExcel"
+                        >
+                            <AppIcon name="fileSpreadsheet" :size="16" />
+                            <span>
+                                <strong>{{ isExportingExcel ? 'Gerando Excel...' : 'Exportar Excel' }}</strong>
+                                <small>
+                                    {{
+                                        isExportingExcel
+                                            ? 'Montando a planilha anual no formato do balanço.'
+                                            : 'Planilha .xlsx com o layout do balanço anual do protótipo.'
+                                    }}
+                                </small>
+                            </span>
+                        </button>
+                    </div>
+                </div>
 
                 <button
                     class="annual-action annual-action--primary"
@@ -1599,7 +1699,9 @@ onBeforeUnmount(() => {
     }
 
     .annual-year-field,
-    .annual-action {
+    .annual-action,
+    .export-menu,
+    .incomes-export-trigger {
         flex: 1 1 220px;
     }
 }
@@ -1639,7 +1741,10 @@ onBeforeUnmount(() => {
     }
 
     .annual-year-field,
-    .annual-action {
+    .annual-action,
+    .export-menu,
+    .incomes-export-trigger,
+    .export-menu-panel {
         width: 100%;
     }
 

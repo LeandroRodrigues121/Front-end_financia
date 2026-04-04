@@ -2,6 +2,7 @@
 import { Chart, registerables } from 'chart.js';
 import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue';
 import api from '@/services/api';
+import { loadMonthlyFinancialReport } from '@/services/reports/loadMonthlyFinancialReport';
 import ConfirmDeleteModal from '@/components/ConfirmDeleteModal.vue';
 import AppIcon from '@/components/AppIcon.vue';
 import { formatCurrency, formatDate, toDateInputValue } from '@/utils/formatters';
@@ -182,6 +183,8 @@ const exportMenuRef = ref(null);
 const serverBreakdown = ref([]);
 const previousPeriod = ref(createPreviousPeriodState());
 const isExportMenuOpen = ref(false);
+const isExportingExcel = ref(false);
+const isExportingPdf = ref(false);
 const fieldErrors = reactive({
     description: '',
     amount: '',
@@ -776,39 +779,60 @@ const toggleExportMenu = () => {
     isExportMenuOpen.value = !isExportMenuOpen.value;
 };
 
-const exportToExcel = () => {
-    const content = buildExportDocument({ title: 'Relatorio de Despesas' });
-    const filename = `despesas-${filters.year}-${String(filters.month).padStart(2, '0')}.xls`;
+const exportToExcel = async () => {
+    if (isExportingExcel.value) return;
 
-    downloadFile({
-        content,
-        type: 'application/vnd.ms-excel;charset=utf-8;',
-        filename,
-    });
+    const month = Number(filters.month);
+    const year = Number(filters.year);
 
-    message.value = 'Exportacao em Excel iniciada com sucesso.';
+    message.value = '';
+    error.value = '';
     closeExportMenu();
+    isExportingExcel.value = true;
+
+    try {
+        const { generateMonthlyFinancialExcel } = await import('@/services/reports/generateMonthlyFinancialExcel');
+        const report = await loadMonthlyFinancialReport({
+            month,
+            year,
+            generatedAt: new Date(),
+        });
+
+        await generateMonthlyFinancialExcel(report);
+        message.value = 'Exportacao em Excel iniciada com sucesso.';
+    } catch {
+        error.value = 'Nao foi possivel exportar o Excel deste periodo.';
+    } finally {
+        isExportingExcel.value = false;
+    }
 };
 
-const exportToPdf = () => {
-    const exportWindow = window.open('', '_blank', 'noopener,noreferrer,width=1100,height=820');
-    if (!exportWindow) {
-        error.value = 'Nao foi possivel abrir a janela de impressao. Verifique o bloqueador de pop-up.';
-        closeExportMenu();
-        return;
-    }
+const exportToPdf = async () => {
+    if (isExportingPdf.value) return;
 
-    exportWindow.document.open();
-    exportWindow.document.write(buildExportDocument({ title: 'Relatorio de Despesas PDF' }));
-    exportWindow.document.close();
-    exportWindow.focus();
+    const month = Number(filters.month);
+    const year = Number(filters.year);
 
-    window.setTimeout(() => {
-        exportWindow.print();
-    }, 250);
-
-    message.value = 'Visualizacao para PDF aberta com sucesso.';
+    message.value = '';
+    error.value = '';
     closeExportMenu();
+    isExportingPdf.value = true;
+
+    try {
+        const { generateMonthlyFinancialPdf } = await import('@/services/reports/generateMonthlyFinancialPdf');
+        const report = await loadMonthlyFinancialReport({
+            month,
+            year,
+            generatedAt: new Date(),
+        });
+
+        await generateMonthlyFinancialPdf(report);
+        message.value = 'Exportacao em PDF iniciada com sucesso.';
+    } catch {
+        error.value = 'Nao foi possivel exportar o PDF deste periodo.';
+    } finally {
+        isExportingPdf.value = false;
+    }
 };
 
 const clearFieldErrors = () => {
@@ -1199,6 +1223,7 @@ onBeforeUnmount(() => {
                     <button
                         class="btn-ghost incomes-export-trigger expenses-export-trigger"
                         type="button"
+                        :disabled="isExportingPdf || isExportingExcel"
                         aria-haspopup="menu"
                         :aria-expanded="isExportMenuOpen"
                         @click.stop="toggleExportMenu"
@@ -1214,19 +1239,43 @@ onBeforeUnmount(() => {
                         role="menu"
                         aria-label="Opcoes de exportacao"
                     >
-                        <button class="export-menu-item" type="button" role="menuitem" @click="exportToPdf">
+                        <button
+                            class="export-menu-item export-menu-item-pdf"
+                            type="button"
+                            role="menuitem"
+                            :disabled="isExportingPdf || isExportingExcel"
+                            @click="exportToPdf"
+                        >
                             <AppIcon name="fileText" :size="16" />
                             <span>
-                                <strong>Exportar PDF</strong>
-                                <small>Layout pronto para impressao e compartilhamento.</small>
+                                <strong>{{ isExportingPdf ? 'Gerando PDF...' : 'Exportar PDF' }}</strong>
+                                <small>
+                                    {{
+                                        isExportingPdf
+                                            ? 'Montando relatorio nativo do periodo selecionado.'
+                                            : 'Layout pronto para impressao e compartilhamento.'
+                                    }}
+                                </small>
                             </span>
                         </button>
 
-                        <button class="export-menu-item" type="button" role="menuitem" @click="exportToExcel">
+                        <button
+                            class="export-menu-item export-menu-item-excel"
+                            type="button"
+                            role="menuitem"
+                            :disabled="isExportingPdf || isExportingExcel"
+                            @click="exportToExcel"
+                        >
                             <AppIcon name="fileSpreadsheet" :size="16" />
                             <span>
-                                <strong>Exportar Excel</strong>
-                                <small>Tabela organizada com resumo e filtros ativos.</small>
+                                <strong>{{ isExportingExcel ? 'Gerando Excel...' : 'Exportar Excel' }}</strong>
+                                <small>
+                                    {{
+                                        isExportingExcel
+                                            ? 'Montando a planilha nativa do periodo selecionado.'
+                                            : 'Planilha .xlsx com layout mensal, filtro e saldo final.'
+                                    }}
+                                </small>
                             </span>
                         </button>
                     </div>

@@ -2932,7 +2932,13 @@ textarea.modal-input-shell:focus,
     box-shadow: 0 14px 24px rgba(23, 49, 71, 0.08);
 }
 
-.incomes-export-trigger:hover {
+.incomes-export-trigger:disabled {
+    opacity: 0.65;
+    cursor: default;
+    box-shadow: 0 14px 24px rgba(23, 49, 71, 0.05);
+}
+
+.incomes-export-trigger:hover:not(:disabled) {
     background: #f8fbfe;
 }
 
@@ -2966,7 +2972,13 @@ textarea.modal-input-shell:focus,
     transition: background-color 0.18s ease, transform 0.18s ease;
 }
 
-.export-menu-item:hover {
+.export-menu-item:disabled {
+    opacity: 0.62;
+    cursor: default;
+    transform: none;
+}
+
+.export-menu-item:hover:not(:disabled) {
     background: #f5f9fc;
     transform: translateY(-1px);
 }
@@ -2984,6 +2996,14 @@ textarea.modal-input-shell:focus,
 .export-menu-item small {
     color: #72839b;
     line-height: 1.45;
+}
+
+.export-menu-item-pdf .app-icon {
+    color: #e11d48;
+}
+
+.export-menu-item-excel .app-icon {
+    color: #16a34a;
 }
 
 .incomes-header-action {
@@ -3642,14 +3662,6 @@ textarea.modal-input-shell:focus,
     box-shadow: 0 14px 24px rgba(225, 29, 72, 0.2);
 }
 
-.expense-export-menu-panel .export-menu-item:first-child .app-icon {
-    color: #e11d48;
-}
-
-.expense-export-menu-panel .export-menu-item:last-child .app-icon {
-    color: #16a34a;
-}
-
 .expenses-summary-grid {
     grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 18px;
@@ -3992,6 +4004,14 @@ textarea.modal-input-shell:focus,
     gap: 18px;
 }
 
+.debts-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+}
+
 .debts-header-copy {
     display: grid;
     gap: 8px;
@@ -4020,6 +4040,10 @@ textarea.modal-input-shell:focus,
 
 .debts-header-action {
     min-width: 210px;
+}
+
+.debts-export-trigger {
+    min-width: 0;
 }
 
 .debts-header-action-icon {
@@ -4747,7 +4771,14 @@ textarea.modal-input-shell:focus,
         flex-direction: column;
     }
 
+    .debts-header-actions {
+        width: 100%;
+        flex-direction: column;
+        align-items: stretch;
+    }
+
     .debts-header-action,
+    .debts-export-trigger,
     .debts-empty-action {
         width: 100%;
     }
@@ -4790,6 +4821,10 @@ textarea.modal-input-shell:focus,
 
     .debts-toolbar-actions {
         flex-direction: column;
+    }
+
+    .debts-header-actions .export-menu {
+        width: 100%;
     }
 
     .debts-select-field,
