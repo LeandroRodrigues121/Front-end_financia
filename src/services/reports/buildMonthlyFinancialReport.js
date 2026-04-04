@@ -25,7 +25,7 @@ const capitalize = (value) => {
     return text ? text.charAt(0).toUpperCase() + text.slice(1) : '-';
 };
 
-const paymentMethodLabel = (value) => String(value || '').trim() || 'Nao informado';
+const paymentMethodLabel = (value) => String(value || '').trim() || 'Não informado';
 const toIsoDate = (value) => String(value || '').slice(0, 10);
 
 const toDateValue = (value) => {

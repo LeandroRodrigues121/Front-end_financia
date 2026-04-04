@@ -267,8 +267,8 @@ const buildExportDocument = () => {
         .metric strong {
             display: block;
             margin-top: 16px;
-            font-size: 1.55rem;
-            line-height: 1.08;
+            font-size: 0.95rem;
+            line-height: 1.3;
         }
         .metric p {
             margin: 12px 0 0;
@@ -1112,10 +1112,10 @@ onBeforeUnmount(() => {
 
 .annual-page-heading h2 {
     margin: 0;
-    font-size: clamp(2rem, 2.8vw, 3rem);
-    line-height: 1;
+    font-size: 1.5rem;
+    line-height: 1.1;
     color: var(--annual-ink);
-    letter-spacing: -0.04em;
+    letter-spacing: -0.02em;
 }
 
 .annual-page-heading p {
@@ -1309,12 +1309,12 @@ onBeforeUnmount(() => {
 }
 
 .annual-metric-card {
-    min-height: 166px;
-    padding: 24px;
-    border-radius: 24px;
+    min-height: 116px;
+    padding: 14px 16px;
+    border-radius: 20px;
     border-color: var(--annual-border);
     box-shadow: var(--annual-shadow);
-    gap: 14px;
+    gap: 8px;
     transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
 }
 
@@ -1324,9 +1324,9 @@ onBeforeUnmount(() => {
 }
 
 .annual-metric-label {
-    font-size: 0.66rem;
+    font-size: 0.62rem;
     font-weight: 900;
-    letter-spacing: 0.16em;
+    letter-spacing: 0.14em;
     text-transform: uppercase;
     color: #96a4bb;
 }
@@ -1336,7 +1336,7 @@ onBeforeUnmount(() => {
     display: flex;
     align-items: flex-start;
     justify-content: space-between;
-    gap: 12px;
+    gap: 10px;
 }
 
 .annual-metric-title-group {
@@ -1351,13 +1351,13 @@ onBeforeUnmount(() => {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 18px;
-    height: 18px;
+    width: 16px;
+    height: 16px;
     border: 0;
     border-radius: 999px;
     background: rgba(148, 163, 184, 0.14);
     color: #7b8aa0;
-    font-size: 0.65rem;
+    font-size: 0.60rem;
     font-weight: 900;
     line-height: 1;
     cursor: help;
@@ -1401,9 +1401,9 @@ onBeforeUnmount(() => {
     display: flex;
     align-items: baseline;
     gap: 6px;
-    min-height: 40px;
+    min-height: 32px;
     color: var(--annual-ink);
-    font-size: clamp(1.5rem, 1.8vw, 1.85rem);
+    font-size: clamp(1.1rem, 1.4vw, 1.35rem);
     font-weight: 700;
     line-height: 1.08;
     letter-spacing: -0.03em;
@@ -1415,7 +1415,7 @@ onBeforeUnmount(() => {
 
 .annual-currency-sign,
 .annual-currency-symbol {
-    font-size: 0.95rem;
+    font-size: 0.75rem;
     font-weight: 700;
     letter-spacing: 0;
     color: #9aa9be;
@@ -1427,8 +1427,8 @@ onBeforeUnmount(() => {
 
 .annual-metric-caption {
     margin: 0;
-    font-size: 0.78rem;
-    line-height: 1.4;
+    font-size: 0.72rem;
+    line-height: 1.3;
     color: var(--annual-muted);
 }
 
@@ -1436,9 +1436,9 @@ onBeforeUnmount(() => {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 28px;
-    height: 28px;
-    border-radius: 10px;
+    width: 24px;
+    height: 24px;
+    border-radius: 9px;
     color: var(--annual-accent);
     background: rgba(84, 80, 231, 0.12);
 }
@@ -1733,7 +1733,7 @@ onBeforeUnmount(() => {
 
 @media (max-width: 720px) {
     .annual-page-heading h2 {
-        font-size: 2.35rem;
+        font-size: 1.35rem;
     }
 
     .annual-toolbar {

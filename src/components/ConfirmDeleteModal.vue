@@ -1,4 +1,4 @@
-<script setup>
+﻿<script setup>
 import { computed } from 'vue';
 import AppIcon from '@/components/AppIcon.vue';
 
@@ -71,7 +71,7 @@ const handleConfirm = () => {
                         <p id="confirm-delete-description" class="confirm-delete-message">
                             Tem certeza que deseja excluir
                             <strong>"{{ resolvedItemName }}"</strong>?
-                            Esta acao nao pode ser desfeita.
+                            Esta ação não pode ser desfeita.
                         </p>
                     </div>
 
@@ -90,3 +90,4 @@ const handleConfirm = () => {
         </Transition>
     </Teleport>
 </template>
+

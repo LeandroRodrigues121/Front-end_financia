@@ -1,4 +1,4 @@
-<script setup>
+﻿<script setup>
 import { Chart, registerables } from 'chart.js';
 import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue';
 import api from '@/services/api';
@@ -29,7 +29,7 @@ const categoryPalette = {
     outros: '#cbd5e1',
 };
 
-const defaultPaymentMethods = ['Nubank', 'Itau', 'Pix', 'Debito automatico', 'Dinheiro'];
+const defaultPaymentMethods = ['Nubank', 'Itaú', 'Pix', 'Débito automático', 'Dinheiro'];
 
 const getTodayInputValue = () => {
     const now = new Date();
@@ -138,7 +138,7 @@ const createFormState = () => ({
 const createPreviousPeriodState = () => ({
     month: null,
     year: null,
-    label: 'periodo anterior',
+    label: 'período anterior',
     totalAmount: 0,
     deltaAmount: 0,
     deltaPercentage: null,
@@ -147,7 +147,7 @@ const createPreviousPeriodState = () => ({
 const normalizePreviousPeriod = (value) => ({
     month: Number(value?.month || 0) || null,
     year: Number(value?.year || 0) || null,
-    label: value?.label ? String(value.label) : 'periodo anterior',
+    label: value?.label ? String(value.label) : 'período anterior',
     totalAmount: Number(value?.total_amount || 0),
     deltaAmount: Number(value?.delta_amount || 0),
     deltaPercentage:
@@ -156,7 +156,7 @@ const normalizePreviousPeriod = (value) => ({
             : Number(value.delta_percentage),
 });
 
-const paymentMethodLabel = (value) => String(value || '').trim() || 'Nao informado';
+const paymentMethodLabel = (value) => String(value || '').trim() || 'não informado';
 
 const form = reactive(createFormState());
 const filters = reactive({
@@ -202,7 +202,7 @@ const isAnyModalOpen = computed(() => isFormOpen.value || isDeleteModalOpen.valu
 
 const periodLabel = computed(() => {
     const month = monthOptions.find((item) => item.value === Number(filters.month));
-    return `${month?.label || 'mes'} de ${filters.year}`;
+    return `${month?.label || 'mês'} de ${filters.year}`;
 });
 
 const yearOptions = computed(() => {
@@ -335,18 +335,18 @@ const openTotal = computed(() =>
 
 const paidDescription = computed(() => {
     const count = paidExpenses.value.length;
-    if (!count) return 'Nenhuma despesa paga neste periodo.';
+    if (!count) return 'Nenhuma despesa paga neste período.';
 
-    return `${count} ${count === 1 ? 'lancamento efetuado' : 'lancamentos efetuados'}`;
+    return `${count} ${count === 1 ? 'lançamento efetuado' : 'lançamentos efetuados'}`;
 });
 
 const openStateDescription = computed(() => {
     if (!openExpenses.value.length) {
-        return 'Sem despesas em aberto no periodo.';
+        return 'Sem despesas em aberto no período.';
     }
 
     if (overdueExpenses.value.length) {
-        return `${overdueExpenses.value.length} ${overdueExpenses.value.length === 1 ? 'despesa atrasada' : 'despesas atrasadas'} requer atencao.`;
+        return `${overdueExpenses.value.length} ${overdueExpenses.value.length === 1 ? 'despesa atrasada' : 'despesas atrasadas'} requer atenção.`;
     }
 
     const highestOpenExpense = [...openExpenses.value].sort(
@@ -354,8 +354,8 @@ const openStateDescription = computed(() => {
     )[0];
 
     return highestOpenExpense
-        ? `Maior pendencia em ${expenseCategoryLabel(highestOpenExpense.category)}.`
-        : 'Acompanhe os proximos pagamentos.';
+        ? `Maior pendência em ${expenseCategoryLabel(highestOpenExpense.category)}.`
+        : 'Acompanhe os próximos pagamentos.';
 });
 
 const comparisonTone = computed(() => {
@@ -374,7 +374,7 @@ const comparisonIcon = computed(() => {
 });
 
 const comparisonBadgeText = computed(() => {
-    const label = previousPeriod.value.label || 'periodo anterior';
+    const label = previousPeriod.value.label || 'período anterior';
 
     if (previousPeriod.value.deltaPercentage === null) {
         return `Sem base em ${label}`;
@@ -392,29 +392,29 @@ const comparisonBadgeText = computed(() => {
 });
 
 const leadCategoryShareLabel = computed(() => {
-    if (!leadCategory.value) return 'Sem composicao';
+    if (!leadCategory.value) return 'Sem composição';
     return `${leadCategory.value.share.toFixed(0)}% do total`;
 });
 
 const leadCategoryAmountLabel = computed(() => {
     if (!leadCategory.value) {
-        return 'Assim que houver despesas, a composicao aparece aqui.';
+        return 'Assim que houver despesas, a composição aparece aqui.';
     }
 
-    return `${formatCurrency(leadCategory.value.amount)} no periodo`;
+    return `${formatCurrency(leadCategory.value.amount)} no período`;
 });
 
 const emptyStateCopy = computed(() => {
     if (searchQuery.value.trim()) {
         return {
             title: 'Nenhum resultado para esta busca',
-            description: 'Tente outro termo ou limpe a busca para revisar todas as despesas do periodo.',
+            description: 'Tente outro termo ou limpe a busca para revisar todas as despesas do período.',
             button: 'Limpar busca',
         };
     }
 
     return {
-        title: 'Nenhuma despesa neste periodo',
+        title: 'Nenhuma despesa neste período',
         description: `Cadastre uma nova despesa para iniciar a leitura de ${periodLabel.value}.`,
         button: 'Nova Despesa',
     };
@@ -470,7 +470,7 @@ const buildExportRowsMarkup = () =>
             <tr>
                 <td colspan="6">
                     <strong>Nenhuma despesa encontrada</strong>
-                    <div class="muted">Nao ha linhas disponiveis para os filtros aplicados na exportacao.</div>
+                    <div class="muted">não há linhas disponíveis para os filtros aplicados na Exportação.</div>
                 </td>
             </tr>
         `;
@@ -493,9 +493,9 @@ const buildExportDocument = ({ title }) => {
             detail: openStateDescription.value,
         },
         {
-            label: 'Categoria lider',
+            label: 'Categoria líder',
             value: leadCategory.value ? leadCategory.value.label : 'Sem dados',
-            detail: leadCategory.value ? `${leadCategory.value.share.toFixed(1).replace('.', ',')}% do total` : 'Sem composicao',
+            detail: leadCategory.value ? `${leadCategory.value.share.toFixed(1).replace('.', ',')}% do total` : 'Sem composição',
         },
     ];
 
@@ -523,7 +523,7 @@ const buildExportDocument = ({ title }) => {
                 `,
               )
               .join('')
-        : '<li><span>Sem composicao para exportar neste periodo.</span></li>';
+        : '<li><span>Sem composição para exportar neste período.</span></li>';
 
     return `<!DOCTYPE html>
 <html lang="pt-BR">
@@ -710,8 +710,8 @@ const buildExportDocument = ({ title }) => {
         <section class="hero">
             <div class="hero-top">
                 <div>
-                    <h1>Relatorio de Despesas</h1>
-                    <p>Exportacao organizada do periodo ${escapeHtml(periodLabel.value)} com indicadores, composicao e tabela detalhada.</p>
+                    <h1>relatório de Despesas</h1>
+                    <p>Exportação organizada do período ${escapeHtml(periodLabel.value)} com indicadores, composição e tabela detalhada.</p>
                 </div>
                 <aside class="meta">
                     <span>Gerado em</span>
@@ -728,12 +728,12 @@ const buildExportDocument = ({ title }) => {
         <section class="section">
             <div class="section-grid">
                 <section class="card">
-                    <h2>Lancamentos do periodo</h2>
+                    <h2>Lançamentos do período</h2>
                     <table>
                         <thead>
                             <tr>
                                 <th>Data</th>
-                                <th>Descricao</th>
+                                <th>Descrição</th>
                                 <th>Categoria</th>
                                 <th>Meio de pagamento</th>
                                 <th>Estado</th>
@@ -747,9 +747,9 @@ const buildExportDocument = ({ title }) => {
                 </section>
 
                 <aside class="card">
-                    <h2>Composicao por categoria</h2>
+                    <h2>Composição por categoria</h2>
                     <ul class="legend">${legendMarkup}</ul>
-                    <p class="insight">${escapeHtml(leadCategory.value ? `${leadCategory.value.label} concentra a maior parcela das despesas do periodo.` : 'Sem dados suficientes para identificar a categoria lider.')}</p>
+                    <p class="insight">${escapeHtml(leadCategory.value ? `${leadCategory.value.label} concentra a maior parcela das despesas do período.` : 'Sem dados suficientes para identificar a categoria líder.')}</p>
                 </aside>
             </div>
             <p class="footer-note">Fonte: Finance Atlas | Tela de Despesas | Filtros ativos: ${escapeHtml(periodLabel.value)}</p>
@@ -799,9 +799,9 @@ const exportToExcel = async () => {
         });
 
         await generateMonthlyFinancialExcel(report);
-        message.value = 'Exportacao em Excel iniciada com sucesso.';
+        message.value = 'Exportação em Excel iniciada com sucesso.';
     } catch {
-        error.value = 'Nao foi possivel exportar o Excel deste periodo.';
+        error.value = 'não foi possivel exportar o Excel deste período.';
     } finally {
         isExportingExcel.value = false;
     }
@@ -827,9 +827,9 @@ const exportToPdf = async () => {
         });
 
         await generateMonthlyFinancialPdf(report);
-        message.value = 'Exportacao em PDF iniciada com sucesso.';
+        message.value = 'Exportação em PDF iniciada com sucesso.';
     } catch {
-        error.value = 'Nao foi possivel exportar o PDF deste periodo.';
+        error.value = 'não foi possivel exportar o PDF deste período.';
     } finally {
         isExportingPdf.value = false;
     }
@@ -987,7 +987,7 @@ const renderCategoryChart = () => {
                     callbacks: {
                         label(context) {
                             if (!hasCategoryData.value) {
-                                return 'Sem despesas no periodo selecionado.';
+                                return 'Sem despesas no período selecionado.';
                             }
 
                             const item = categoryBreakdown.value[context.dataIndex];
@@ -1065,7 +1065,7 @@ const saveExpense = async () => {
         isFormOpen.value = false;
         resetForm();
     } catch (requestError) {
-        formError.value = requestError?.response?.data?.message || 'Nao foi possivel salvar a despesa.';
+        formError.value = requestError?.response?.data?.message || 'não foi possivel Salvar a despesa.';
     } finally {
         saving.value = false;
     }
@@ -1085,7 +1085,7 @@ const confirmDeleteExpense = async () => {
         await loadExpenses();
         message.value = 'Despesa excluida com sucesso.';
     } catch {
-        error.value = 'Nao foi possivel excluir a despesa.';
+        error.value = 'não foi possivel excluir a despesa.';
     } finally {
         deleting.value = false;
     }
@@ -1237,7 +1237,7 @@ onBeforeUnmount(() => {
                         v-if="isExportMenuOpen"
                         class="export-menu-panel expense-export-menu-panel"
                         role="menu"
-                        aria-label="Opcoes de exportacao"
+                        aria-label="Opções de exportação"
                     >
                         <button
                             class="export-menu-item export-menu-item-pdf"
@@ -1252,7 +1252,7 @@ onBeforeUnmount(() => {
                                 <small>
                                     {{
                                         isExportingPdf
-                                            ? 'Montando relatorio nativo do periodo selecionado.'
+                                            ? 'Montando relatório nativo do período selecionado.'
                                             : 'Layout pronto para impressao e compartilhamento.'
                                     }}
                                 </small>
@@ -1272,7 +1272,7 @@ onBeforeUnmount(() => {
                                 <small>
                                     {{
                                         isExportingExcel
-                                            ? 'Montando a planilha nativa do periodo selecionado.'
+                                            ? 'Montando a planilha nativa do período selecionado.'
                                             : 'Planilha .xlsx com layout mensal, filtro e saldo final.'
                                     }}
                                 </small>
@@ -1372,7 +1372,7 @@ onBeforeUnmount(() => {
 
                 <div class="expenses-toolbar-filters">
                     <label>
-                        <span>Mes</span>
+                        <span>Mês</span>
                         <select v-model.number="filters.month">
                             <option v-for="month in monthOptions" :key="month.value" :value="month.value">
                                 {{ month.label }}
@@ -1414,11 +1414,11 @@ onBeforeUnmount(() => {
                         <thead>
                             <tr>
                                 <th>Data</th>
-                                <th>Descricao / Categoria</th>
+                                <th>Descrição / Categoria</th>
                                 <th>Meio de Pagamento</th>
                                 <th>Status</th>
                                 <th class="align-right">Valor</th>
-                                <th class="align-center">Acoes</th>
+                                <th class="align-center">Ações</th>
                             </tr>
                         </thead>
 
@@ -1482,7 +1482,7 @@ onBeforeUnmount(() => {
 
                 <div v-if="totalPages > 1" class="income-table-footer">
                     <div class="income-table-footer-line" />
-                    <nav class="table-pagination" aria-label="Paginacao das despesas">
+                    <nav class="table-pagination" aria-label="Paginação das despesas">
                         <button
                             type="button"
                             class="pagination-btn"
@@ -1548,13 +1548,13 @@ onBeforeUnmount(() => {
                                 <h3 id="expense-form-title">
                                     {{ editingId ? 'Editar despesa' : 'Cadastrar nova despesa' }}
                                 </h3>
-                                <p>Organize categoria, meio de pagamento e status para manter sua leitura do mes mais clara.</p>
+                                <p>Organize categoria, meio de pagamento e status para manter sua leitura do mês mais clara.</p>
                             </div>
 
                             <button
                                 type="button"
                                 class="btn-icon btn-icon-ghost"
-                                aria-label="Fechar formulario"
+                                aria-label="Fechar formulário"
                                 @click="closeFormModal"
                             >
                                 <AppIcon name="close" :size="18" />
@@ -1564,7 +1564,7 @@ onBeforeUnmount(() => {
                         <form class="income-form-layout expense-form-layout" @submit.prevent="saveExpense">
                             <label class="modal-field">
                                 <span class="modal-field-label">
-                                    Descricao
+                                    Descrição
                                     <span class="required-mark">*</span>
                                 </span>
                                 <input
@@ -1662,7 +1662,7 @@ onBeforeUnmount(() => {
                                         list="expense-payment-methods"
                                         class="modal-input-shell"
                                         type="text"
-                                        placeholder="Ex.: Nubank, Pix, Debito"
+                                        placeholder="Ex.: Nubank, Pix, Débito"
                                         autocomplete="off"
                                     />
                                     <datalist id="expense-payment-methods">
@@ -1697,7 +1697,7 @@ onBeforeUnmount(() => {
                             </label>
 
                             <label class="modal-field">
-                                <span class="modal-field-label">Observacao</span>
+                                <span class="modal-field-label">Observação</span>
                                 <textarea
                                     v-model="form.notes"
                                     class="modal-input-shell modal-notes-field"

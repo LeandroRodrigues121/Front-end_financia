@@ -247,7 +247,7 @@ textarea {
 }
 
 .page-header h2 {
-    font-size: 1.9rem;
+    font-size: 1.5rem;
 }
 
 .page-kicker {
@@ -281,8 +281,8 @@ textarea {
 }
 
 .dashboard-header-copy h2 {
-    font-size: clamp(2.2rem, 3vw, 3rem);
-    line-height: 0.98;
+    font-size: 1.5rem;
+    line-height: 1.1;
     color: #172b4d;
 }
 
@@ -2903,7 +2903,8 @@ textarea.modal-input-shell:focus,
 }
 
 .incomes-header-copy h2 {
-    font-size: 1.88rem;
+    font-size: 1.5rem;
+    line-height: 1.1;
 }
 
 .incomes-header-copy p {
@@ -3022,12 +3023,12 @@ textarea.modal-input-shell:focus,
 }
 
 .income-summary-card {
-    min-height: 140px;
-    padding: 20px 18px 16px;
-    border-radius: 22px;
+    min-height: 116px;
+    padding: 14px 16px;
+    border-radius: 20px;
     box-shadow: 0 22px 44px rgba(17, 34, 44, 0.08);
     display: grid;
-    gap: 12px;
+    gap: 8px;
     align-content: start;
 }
 
@@ -3035,14 +3036,14 @@ textarea.modal-input-shell:focus,
     display: flex;
     align-items: flex-start;
     justify-content: space-between;
-    gap: 12px;
+    gap: 10px;
 }
 
 .income-summary-card h3 {
     color: #6d7f97;
-    font-size: 0.78rem;
+    font-size: 0.62rem;
     font-weight: 800;
-    letter-spacing: 0.08em;
+    letter-spacing: 0.14em;
     text-transform: uppercase;
 }
 
@@ -3051,8 +3052,8 @@ textarea.modal-input-shell:focus,
 }
 
 .income-summary-card strong {
-    font-size: 1.58rem;
-    line-height: 1.02;
+    font-size: 1.35rem;
+    line-height: 1.08;
     color: #163247;
     letter-spacing: -0.03em;
 }
@@ -3066,7 +3067,8 @@ textarea.modal-input-shell:focus,
 
 .income-summary-card .metric-description {
     color: #8b99b0;
-    font-size: 0.84rem;
+    font-size: 0.72rem;
+    line-height: 1.3;
 }
 
 .income-summary-card.tone-positive strong {
@@ -3629,7 +3631,8 @@ textarea.modal-input-shell:focus,
 }
 
 .expenses-header-copy h2 {
-    font-size: 2rem;
+    font-size: 1.5rem;
+    line-height: 1.1;
     color: #173147;
 }
 
@@ -3668,28 +3671,28 @@ textarea.modal-input-shell:focus,
 }
 
 .expense-summary-card {
-    min-height: 148px;
-    padding: 22px 20px 18px;
-    border-radius: 22px;
+    min-height: 116px;
+    padding: 14px 16px;
+    border-radius: 20px;
     box-shadow: 0 22px 44px rgba(17, 34, 44, 0.08);
     display: grid;
-    gap: 14px;
+    gap: 8px;
     align-content: start;
 }
 
 .expense-summary-head h3,
 .expense-lead-copy h3 {
     color: #8a99ae;
-    font-size: 0.82rem;
+    font-size: 0.62rem;
     font-weight: 800;
-    letter-spacing: 0.08em;
+    letter-spacing: 0.14em;
     text-transform: uppercase;
 }
 
 .expense-summary-value,
 .expense-lead-copy strong {
-    font-size: 1.95rem;
-    line-height: 1.02;
+    font-size: 1.35rem;
+    line-height: 1.08;
     color: #173147;
 }
 
@@ -3702,8 +3705,10 @@ textarea.modal-input-shell:focus,
 }
 
 .expense-summary-description {
+    margin-top: 4px;
     color: #8b99b0;
-    font-size: 0.92rem;
+    font-size: 0.7rem;
+    line-height: 1.45;
 }
 
 .expense-trend-pill {
@@ -4019,7 +4024,8 @@ textarea.modal-input-shell:focus,
 }
 
 .debts-header-copy h2 {
-    font-size: clamp(2rem, 3vw, 3rem);
+    font-size: 1.5rem;
+    line-height: 1.1;
     color: #173147;
 }
 
@@ -4057,16 +4063,16 @@ textarea.modal-input-shell:focus,
 
 .debts-summary-grid {
     grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 18px;
+    gap: 12px;
 }
 
 .debt-summary-card {
-    min-height: 178px;
-    padding: 28px 30px 24px;
-    border-radius: 24px;
-    box-shadow: 0 22px 44px rgba(17, 34, 44, 0.08);
+    min-height: 88px;
+    padding: 10px 12px;
+    border-radius: 14px;
+    box-shadow: 0 16px 32px rgba(17, 34, 44, 0.08);
     display: grid;
-    gap: 16px;
+    gap: 6px;
     align-content: start;
 }
 
@@ -4074,12 +4080,12 @@ textarea.modal-input-shell:focus,
     display: flex;
     align-items: flex-start;
     justify-content: space-between;
-    gap: 12px;
+    gap: 10px;
 }
 
 .debt-summary-kicker {
     color: #93a1b7;
-    font-size: 0.84rem;
+    font-size: 0.58rem;
     font-weight: 800;
     letter-spacing: 0.12em;
     text-transform: uppercase;
@@ -4098,9 +4104,9 @@ textarea.modal-input-shell:focus,
 }
 
 .debt-summary-value {
-    font-size: clamp(2rem, 2.8vw, 3rem);
-    line-height: 0.98;
-    letter-spacing: -0.05em;
+    font-size: 1.1rem;
+    line-height: 1.08;
+    letter-spacing: -0.03em;
     color: #173147;
 }
 
@@ -4113,20 +4119,22 @@ textarea.modal-input-shell:focus,
 }
 
 .debt-summary-card .metric-description {
+    margin-top: 4px;
     color: #9aa8bd;
-    font-size: 0.96rem;
+    font-size: 0.8rem;
+    line-height: 1.4;
 }
 
 .debt-progress-card {
     position: relative;
-    min-height: 178px;
-    padding: 28px 30px 24px;
+    min-height: 140px;
+    padding: 18px 20px 16px;
     border: 0;
-    border-radius: 24px;
+    border-radius: 18px;
     overflow: hidden;
     background: linear-gradient(135deg, #3c358f 0%, #332d80 100%);
     color: #ffffff;
-    box-shadow: 0 24px 46px rgba(43, 37, 111, 0.22);
+    box-shadow: 0 18px 36px rgba(43, 37, 111, 0.22);
 }
 
 .debt-progress-card .debt-summary-kicker {
@@ -4137,7 +4145,7 @@ textarea.modal-input-shell:focus,
     position: relative;
     z-index: 1;
     display: grid;
-    gap: 12px;
+    gap: 8px;
 }
 
 .debt-progress-value-line {
@@ -4153,7 +4161,7 @@ textarea.modal-input-shell:focus,
 
 .debt-progress-caption {
     color: rgba(224, 229, 255, 0.72);
-    font-size: 1.02rem;
+    font-size: 0.85rem;
     font-style: italic;
 }
 

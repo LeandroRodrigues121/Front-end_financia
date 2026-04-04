@@ -1,6 +1,6 @@
 import ExcelJS from 'exceljs';
 
-const SHEET_NAME = 'Situacao de Debitos';
+const SHEET_NAME = 'Situação de Débitos';
 const BRL_FORMAT = '"R$" #,##0.00';
 const PERCENT_FORMAT = '0%';
 const DATE_FORMAT = 'dd/mm/yyyy';

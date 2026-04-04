@@ -147,7 +147,7 @@ export async function generateMonthlyFinancialExcel(report) {
     titleCell.alignment = { vertical: 'middle', horizontal: 'left' };
 
     const periodCell = sheet.getCell('E1');
-    periodCell.value = `MES: ${String(report.periodLabel || '-').toUpperCase()}`;
+    periodCell.value = `MÊS: ${String(report.periodLabel || '-').toUpperCase()}`;
     periodCell.font = {
         bold: true,
         size: 12,
@@ -179,7 +179,7 @@ export async function generateMonthlyFinancialExcel(report) {
     generatedAtCell.alignment = { vertical: 'middle', horizontal: 'left' };
 
     const metaCell = sheet.getCell('E2');
-    metaCell.value = `${report.entries.length} registro(s) no periodo`;
+    metaCell.value = `${report.entries.length} registro(s) no período`;
     metaCell.font = {
         size: 10,
         color: { argb: COLORS.muted },
@@ -195,7 +195,7 @@ export async function generateMonthlyFinancialExcel(report) {
     sheet.getRow(3).height = 10;
 
     const headerRow = sheet.getRow(4);
-    headerRow.values = ['DATA', 'DESCRICAO', 'CATEGORIA', 'TIPO', 'CONTA/METODO', 'VALOR (R$)'];
+    headerRow.values = ['DATA', 'DESCRIÇÃO', 'CATEGORIA', 'TIPO', 'CONTA/MÉTODO', 'VALOR (R$)'];
     headerRow.font = {
         bold: true,
         color: { argb: COLORS.ink },
@@ -275,7 +275,7 @@ export async function generateMonthlyFinancialExcel(report) {
         sheet.mergeCells(`A${rowIndex}:F${rowIndex}`);
 
         const emptyCell = sheet.getCell(`A${rowIndex}`);
-        emptyCell.value = 'Nenhuma movimentacao encontrada para o periodo selecionado.';
+        emptyCell.value = 'Nenhuma movimentação encontrada para o período selecionado.';
         emptyCell.font = { italic: true, color: { argb: COLORS.muted } };
         emptyCell.fill = {
             type: 'pattern',
@@ -336,7 +336,7 @@ export async function generateMonthlyFinancialExcel(report) {
     const balanceValueCell = sheet.getCell(`F${balanceRowIndex}`);
     const balanceColor = Number(report.totals.balance || 0) >= 0 ? COLORS.successSoft : COLORS.dangerSoft;
 
-    balanceLabelCell.value = 'SALDO LIQUIDO DO MES';
+    balanceLabelCell.value = 'SALDO LÍQUIDO DO MÊS';
     balanceLabelCell.font = {
         bold: true,
         color: { argb: COLORS.surface },

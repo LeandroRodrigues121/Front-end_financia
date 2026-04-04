@@ -1,4 +1,4 @@
-<script setup>
+﻿<script setup>
 import { Chart, registerables } from 'chart.js';
 import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue';
 import api from '@/services/api';
@@ -605,19 +605,19 @@ const buildExportRowsMarkup = () =>
             <tr>
                 <td colspan="6">
                     <strong>Nenhuma receita encontrada</strong>
-                    <div class="muted">Nao ha linhas disponiveis para os filtros aplicados na exportacao.</div>
+                    <div class="muted">não há linhas disponíveis para os filtros aplicados na Exportação.</div>
                 </td>
             </tr>
         `;
 
 const buildExportDocument = ({ title }) => {
     const summaryCards = [
-        { label: 'Total no periodo', value: formatCurrency(totalAmount.value), detail: `${totalCount.value} lancamentos` },
+        { label: 'Total no período', value: formatCurrency(totalAmount.value), detail: `${totalCount.value} lançamentos` },
         { label: 'Comparativo', value: comparisonValue.value, detail: comparisonDescription.value },
         {
-            label: 'Origem lider',
+            label: 'Origem líder',
             value: leadType.value ? incomeTypeLabel(leadType.value.value) : 'Sem dados',
-            detail: leadType.value ? `${leadType.value.share.toFixed(1).replace('.', ',')}% do total` : 'Sem composicao',
+            detail: leadType.value ? `${leadType.value.share.toFixed(1).replace('.', ',')}% do total` : 'Sem composição',
         },
         { label: 'Categorias ativas', value: String(uniqueCategoriesCount.value), detail: topCategoriesText.value },
     ];
@@ -646,7 +646,7 @@ const buildExportDocument = ({ title }) => {
                 `,
               )
               .join('')
-        : '<li><span>Sem composicao para exportar neste periodo.</span></li>';
+        : '<li><span>Sem composição para exportar neste período.</span></li>';
 
     return `<!DOCTYPE html>
 <html lang="pt-BR">
@@ -834,8 +834,8 @@ const buildExportDocument = ({ title }) => {
         <section class="hero">
             <div class="hero-top">
                 <div>
-                    <h1>Relatorio de Receitas</h1>
-                    <p>Exportacao organizada do periodo ${escapeHtml(periodLabel.value)} com indicadores, composicao e tabela detalhada.</p>
+                    <h1>relatório de Receitas</h1>
+                    <p>Exportação organizada do período ${escapeHtml(periodLabel.value)} com indicadores, composição e tabela detalhada.</p>
                 </div>
                 <aside class="meta">
                     <span>Gerado em</span>
@@ -852,12 +852,12 @@ const buildExportDocument = ({ title }) => {
         <section class="section">
             <div class="section-grid">
                 <section class="card">
-                    <h2>Lancamentos do periodo</h2>
+                    <h2>Lançamentos do período</h2>
                     <table>
                         <thead>
                             <tr>
                                 <th>Data</th>
-                                <th>Descricao</th>
+                                <th>Descrição</th>
                                 <th>Categoria</th>
                                 <th>Tipo</th>
                                 <th>Estado</th>
@@ -871,7 +871,7 @@ const buildExportDocument = ({ title }) => {
                 </section>
 
                 <aside class="card">
-                    <h2>Composicao das receitas</h2>
+                    <h2>Composição das receitas</h2>
                     <ul class="legend">${legendMarkup}</ul>
                     <p class="insight">${escapeHtml(compositionInsight.value)}</p>
                 </aside>
@@ -923,9 +923,9 @@ const exportToExcel = async () => {
         });
 
         await generateMonthlyFinancialExcel(report);
-        message.value = 'Exportacao em Excel iniciada com sucesso.';
+        message.value = 'Exportação em Excel iniciada com sucesso.';
     } catch {
-        error.value = 'Nao foi possivel exportar o Excel deste periodo.';
+        error.value = 'não foi possivel exportar o Excel deste período.';
     } finally {
         isExportingExcel.value = false;
     }
@@ -951,9 +951,9 @@ const exportToPdf = async () => {
         });
 
         await generateMonthlyFinancialPdf(report);
-        message.value = 'Exportacao em PDF iniciada com sucesso.';
+        message.value = 'Exportação em PDF iniciada com sucesso.';
     } catch {
-        error.value = 'Nao foi possivel exportar o PDF deste periodo.';
+        error.value = 'não foi possivel exportar o PDF deste período.';
     } finally {
         isExportingPdf.value = false;
     }
@@ -1193,7 +1193,7 @@ const saveIncome = async () => {
         isFormOpen.value = false;
         resetForm();
     } catch (requestError) {
-        formError.value = requestError?.response?.data?.message || 'Não foi possível salvar a receita.';
+        formError.value = requestError?.response?.data?.message || 'Não foi possível Salvar a receita.';
     } finally {
         saving.value = false;
     }
@@ -1343,7 +1343,7 @@ onBeforeUnmount(() => {
     <section class="page incomes-page">
         <header class="page-header incomes-header">
             <div class="incomes-header-copy">
-                <h2>Controlo de Receitas</h2>
+                <h2>Controle de Receitas</h2>
                 <p>Visão geral das suas entradas do mês e acompanhamento de metas.</p>
             </div>
 
@@ -1362,7 +1362,7 @@ onBeforeUnmount(() => {
                         <AppIcon name="chevronDown" :size="16" />
                     </button>
 
-                    <div v-if="isExportMenuOpen" class="export-menu-panel" role="menu" aria-label="Opcoes de exportacao">
+                    <div v-if="isExportMenuOpen" class="export-menu-panel" role="menu" aria-label="Opções de exportação">
                         <button
                             class="export-menu-item export-menu-item-pdf"
                             type="button"
@@ -1376,7 +1376,7 @@ onBeforeUnmount(() => {
                                 <small>
                                     {{
                                         isExportingPdf
-                                            ? 'Montando relatorio nativo do periodo selecionado.'
+                                            ? 'Montando relatório nativo do período selecionado.'
                                             : 'Layout pronto para impressao e compartilhamento.'
                                     }}
                                 </small>
@@ -1396,7 +1396,7 @@ onBeforeUnmount(() => {
                                 <small>
                                     {{
                                         isExportingExcel
-                                            ? 'Montando a planilha nativa do periodo selecionado.'
+                                            ? 'Montando a planilha nativa do período selecionado.'
                                             : 'Planilha .xlsx com layout mensal, filtro e saldo final.'
                                     }}
                                 </small>

@@ -98,7 +98,7 @@ const totalContractsLabel = computed(() => {
 
 const paidRatioLabel = computed(() => {
     if (!Number(totals.value.total_amount || 0)) {
-        return 'Nenhum pagamento registado';
+        return 'Nenhum pagamento registrado';
     }
 
     return `${completionDisplay.value}% do montante total`;
@@ -174,11 +174,11 @@ const dueHint = (debt) => {
 
     if (diffInDays < 0) {
         const days = Math.abs(diffInDays);
-        return `Vencida ha ${days} dia${days === 1 ? '' : 's'}`;
+        return `Vencida há ${days} dia${days === 1 ? '' : 's'}`;
     }
 
     if (diffInDays === 0) return 'Vence hoje';
-    if (diffInDays === 1) return 'Vence amanha';
+    if (diffInDays === 1) return 'Vence amanhã';
 
     return `Vence em ${diffInDays} dias`;
 };
@@ -371,12 +371,12 @@ const validateForm = () => {
     }
 
     if (paid < 0) {
-        formError.value = 'O valor pago nao pode ser negativo.';
+        formError.value = 'O valor pago não pode ser negativo.';
         return false;
     }
 
     if (paid > total) {
-        formError.value = 'O valor pago nao pode ser maior que o valor total.';
+        formError.value = 'O valor pago não pode ser maior que o valor total.';
         return false;
     }
 
