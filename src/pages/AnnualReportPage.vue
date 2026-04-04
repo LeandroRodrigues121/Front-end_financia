@@ -1112,7 +1112,7 @@ onBeforeUnmount(() => {
 
 .annual-page-heading h2 {
     margin: 0;
-    font-size: 1.5rem;
+    font-size: var(--font-xl);
     line-height: 1.1;
     color: var(--annual-ink);
     letter-spacing: -0.02em;
@@ -1146,7 +1146,7 @@ onBeforeUnmount(() => {
 }
 
 .annual-year-field span {
-    font-size: 0.7rem;
+    font-size: var(--font-xs);
     font-weight: 800;
     letter-spacing: 0.12em;
     text-transform: uppercase;
@@ -1308,10 +1308,14 @@ onBeforeUnmount(() => {
     gap: 18px;
 }
 
+.annual-metrics-grid {
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+}
+
 .annual-metric-card {
-    min-height: 116px;
-    padding: 14px 16px;
-    border-radius: 20px;
+    min-height: var(--card-kpi-min-height);
+    padding: var(--card-kpi-padding);
+    border-radius: var(--card-kpi-radius);
     border-color: var(--annual-border);
     box-shadow: var(--annual-shadow);
     gap: 8px;
@@ -1324,7 +1328,7 @@ onBeforeUnmount(() => {
 }
 
 .annual-metric-label {
-    font-size: 0.62rem;
+    font-size: var(--card-kpi-title-size);
     font-weight: 900;
     letter-spacing: 0.14em;
     text-transform: uppercase;
@@ -1357,7 +1361,7 @@ onBeforeUnmount(() => {
     border-radius: 999px;
     background: rgba(148, 163, 184, 0.14);
     color: #7b8aa0;
-    font-size: 0.60rem;
+    font-size: var(--font-xs);
     font-weight: 900;
     line-height: 1;
     cursor: help;
@@ -1374,7 +1378,7 @@ onBeforeUnmount(() => {
     border-radius: 12px;
     background: #13263a;
     color: #f8fbff;
-    font-size: 0.74rem;
+    font-size: var(--font-xs);
     font-weight: 600;
     line-height: 1.35;
     text-align: left;
@@ -1403,7 +1407,7 @@ onBeforeUnmount(() => {
     gap: 6px;
     min-height: 32px;
     color: var(--annual-ink);
-    font-size: clamp(1.1rem, 1.4vw, 1.35rem);
+    font-size: var(--card-kpi-value-size);
     font-weight: 700;
     line-height: 1.08;
     letter-spacing: -0.03em;
@@ -1427,7 +1431,7 @@ onBeforeUnmount(() => {
 
 .annual-metric-caption {
     margin: 0;
-    font-size: 0.72rem;
+    font-size: var(--card-kpi-description-size);
     line-height: 1.3;
     color: var(--annual-muted);
 }
@@ -1512,7 +1516,7 @@ onBeforeUnmount(() => {
 .annual-chart-card h3,
 .annual-table-panel h3 {
     margin: 0 0 6px;
-    font-size: 1.75rem;
+    font-size: var(--font-xl);
     color: var(--annual-ink);
     letter-spacing: -0.03em;
 }
